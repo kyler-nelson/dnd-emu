@@ -1,0 +1,48 @@
+dwarf:
+  ability_score_increase:
+    constitution: 2
+  age: 50
+  alignment: LawfulGood
+  size: Medium
+  speed: 25
+  languages:
+    - Common
+    - Dwarvish
+  properties:
+    - Speed not reduced by wearing heavy armor
+    - darkvision
+    proficiency:
+      - battleaxe
+      - handaxe
+      - light_hammer
+    tool_proficiency:
+      - smiths_tools
+      - brewers_supplies
+      - masons_tools
+    - stonecunning
+
+hill_dwarf:
+  parent: dwarf
+  ability_score_increase: 
+    wisdom: 1
+  properties:
+    - dwarven_toughness
+
+elf:
+  ability_score_increase:
+    dexterity: 2
+  age: 100
+  alignment: NeutralGood
+  size: Medium
+  speed: 30
+  languages:
+    - Common
+    - Elvish
+  properties:
+    - darkvision
+    proficiency:
+      - perception
+    fey_ancestry:
+      saving_throws_advantage: charmed
+      immunity: sleep
+    - trace
