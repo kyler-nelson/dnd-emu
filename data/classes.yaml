@@ -1,0 +1,21 @@
+---
+class_features:
+  Hit Points: Hit Dice:1d12 per barbarian level
+  Hit Points at 1st Level:12 + your Constitution modifier
+  Hit Points at Higher Levels:1d12 (or 7) + your Constitution modifier per barbarian level after 1s
+
+  proficiciences
+  Armor: Light armor, medium armor, shields
+  Weapons:Simple weapons, martial weapons
+  Tools:None
+  Saving Throws:Strength, Constitution
+  Skills: Choose two from Animal Handling, Athletics, Intimidation, Nature, Perception, and Survival
+
+The    Barbarian
+LevelProficiency    BonusFeaturesRagesRage    Damage
+1st+2Rage,    Unarmored    Defense2+22nd+2Reckless    Attack,    Danger    Sense
+2+23rd+2Primal    Path3+24th+2Ability    Score    Improvement
+3+25th+3Extra    Attack,Fast    Movement3+26th+3Path    feature
+4+27th+3Feral    Instinct4+28th+3Ability    Score    Improvement
+4+29th+4Brutal    Critical(1    die)4+310th+4Path    feature
+4+311th+4Relentless    4+3  

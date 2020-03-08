@@ -1,3 +1,4 @@
+---
 dwarf:
   ability_score_increase:
     constitution: 2
@@ -8,25 +9,46 @@ dwarf:
   languages:
     - Common
     - Dwarvish
-  properties:
-    - Speed not reduced by wearing heavy armor
-    - darkvision
-    proficiency:
-      - battleaxe
-      - handaxe
-      - light_hammer
+  traits:
+    speed:
+      description: "Speed not reduced by wearing heavy armor"
+    darkvision:
+      description: "Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can’t discern color in darkness, only shades of gray."
+      modifiers:
+        darkvision: 60
+    stonecunning:
+      description: "Whenever    you    make    an    Intelligence    (History)    check    related    to    the    origin    of    stonework,    you    are    considered    proficient    in    the    History    skill    and    add    double    your    proficiency    bonus    to    the    check,    instead    of    your    normal    proficiency    bonus."
+      modifiers:
+        proficiency: Intelligence (History)
+        proficiency_doubled: Intelligence (History)
+        condition: "Related    to    the    origin    of    stonework"
     tool_proficiency:
-      - smiths_tools
-      - brewers_supplies
-      - masons_tools
-    - stonecunning
+      description: "You    gain    proficiency    with    the    artisan’s    tools    of    your    choice:    smith’s    tools,    brewer’s    supplies,    or    mason’s    tools."
+      modifiers:
+        proficiency:
+          type: selection
+          number_to_select: 1
+          proficiency_list:
+            - smithstools
+            - brewers_supplies
+            - masons_tools
+    dwarven_combat_training:
+      description: "You    have    proficiency    with    the    battleaxe,    handaxe,    light    hammer,    and    warhammer."
+      modifiers:
+        proficiency: battleaxe
+        proficiency: handaxe
+        proficiency: light_hammer
+
 
 hill_dwarf:
   parent: dwarf
-  ability_score_increase: 
+  ability_score_increase:
     wisdom: 1
   properties:
-    - dwarven_toughness
+    dwarven_toughness:
+      description: Your    hit    point    maximum    increases    by    1,    and    it    increases    by    1    every    time    you    gain    a    level.
+      modifiers:
+        hit_point_maximum_increase: "1 + ${character_level}"
 
 elf:
   ability_score_increase:
@@ -40,9 +62,9 @@ elf:
     - Elvish
   properties:
     - darkvision
-    proficiency:
-      - perception
-    fey_ancestry:
-      saving_throws_advantage: charmed
-      immunity: sleep
     - trace
+  proficiency:
+    - perception
+  fey_ancestry:
+    saving_throws_advantage: charmed
+    immunity: sleep
