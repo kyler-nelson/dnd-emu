@@ -138,13 +138,13 @@ fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
         std::fs::create_dir(directory).unwrap();
     }
 
-    let serialize_races = OpenOptions::new()
+    let races_output_file = OpenOptions::new()
         .write(true)
         .create(true)
         .open(file_path)
         .unwrap();
 
-    serde_yaml::to_writer(&serialize_races, &races).unwrap();
+    serde_yaml::to_writer(&races_output_file, &races).unwrap();
 
     println!("{:?}", &races);
 
