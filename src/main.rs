@@ -3,7 +3,9 @@ extern crate yaml_rust;
 
 use std::fmt::Debug;
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::Read;
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use yaml_rust::YamlLoader;
@@ -104,8 +106,6 @@ struct RaceInfo {
     size: Size,
     speed: i64,
     languages: Vec<Language>,
-    experience_points: u32,
-    level: u32,
 }
 
 fn main() {
@@ -129,9 +129,24 @@ fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
         size: Size::Medium,
         speed: 25,
         languages: vec![Language::Dwarvish],
-        experience_points: 0,
-        level: 1,
     });
+
+    let file_path = Path::new("serialize/races.yaml");
+    let directory = file_path.parent().unwrap();
+
+    if !directory.exists() {
+        std::fs::create_dir(directory).unwrap();
+    }
+
+    let serialize_races = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(file_path)
+        .unwrap();
+
+    serde_yaml::to_writer(&serialize_races, &races).unwrap();
+
+    println!("{:?}", &races);
 
     return races;
 }

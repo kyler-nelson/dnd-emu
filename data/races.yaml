@@ -18,37 +18,36 @@ dwarf:
         darkvision: 60
     stonecunning:
       description: "Whenever    you    make    an    Intelligence    (History)    check    related    to    the    origin    of    stonework,    you    are    considered    proficient    in    the    History    skill    and    add    double    your    proficiency    bonus    to    the    check,    instead    of    your    normal    proficiency    bonus."
+      condition: "Related    to    the    origin    of    stonework"
       modifiers:
-        proficiency: Intelligence (History)
-        proficiency_doubled: Intelligence (History)
-        condition: "Related    to    the    origin    of    stonework"
+        - proficiency: "Intelligence (History)"
+        - proficiency_doubled: "Intelligence (History)"
     tool_proficiency:
       description: "You    gain    proficiency    with    the    artisan’s    tools    of    your    choice:    smith’s    tools,    brewer’s    supplies,    or    mason’s    tools."
       modifiers:
-        proficiency:
-          type: selection
-          number_to_select: 1
-          proficiency_list:
-            - smithstools
-            - brewers_supplies
-            - masons_tools
+        - proficiency:
+            type: selection
+            number_to_select: 1
+            proficiency_list:
+              - smiths_tools
+              - brewers_supplies
+              - masons_tools
     dwarven_combat_training:
       description: "You    have    proficiency    with    the    battleaxe,    handaxe,    light    hammer,    and    warhammer."
       modifiers:
-        proficiency: battleaxe
-        proficiency: handaxe
-        proficiency: light_hammer
-
+        - proficiency: battleaxe
+        - proficiency: handaxe
+        - proficiency: light_hammer
 
 hill_dwarf:
   parent: dwarf
   ability_score_increase:
     wisdom: 1
-  properties:
+  traits:
     dwarven_toughness:
       description: Your    hit    point    maximum    increases    by    1,    and    it    increases    by    1    every    time    you    gain    a    level.
       modifiers:
-        hit_point_maximum_increase: "1 + ${character_level}"
+        - hit_point_maximum_increase: "1 + ${character_level}"
 
 elf:
   ability_score_increase:
@@ -60,11 +59,35 @@ elf:
   languages:
     - Common
     - Elvish
-  properties:
-    - darkvision
-    - trace
-  proficiency:
-    - perception
-  fey_ancestry:
-    saving_throws_advantage: charmed
-    immunity: sleep
+  traits:
+    keen_senses:
+      description: "You    have    proficiency    in    the    Perception    skill."
+      modifiers:
+        - proficiency: perception
+    darkvision:
+      description: "Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can’t discern color in darkness, only shades of gray."
+      modifiers:
+        - darkvision: 60
+    trance:
+      description: "Elves    don’t    need    to    sleep.    Instead,    they    meditate    deeply,    remaining    semiconscious,    for    4    hours    a    day.    (The    Common    word    for    such    meditation    is    “trance.”)    While    meditating,    you    can    dream    after    a    fashion;    such    dreams    are    actually    mental    exercises    that    have    become    reflexive    through    years    of    practice.    After    resting    in    this    way,    you    gain    the    same    benefit    that    a    human    does    from    8    hours    of    sleep."
+    fey_ancestry:
+      description: "You    have    advantage    on    saving    throws    against    being    charmed,    and    magic    can’t    put    you    to    sleep."
+      modifiers:
+        - saving_throws_advantage: charmed
+        - immunity: sleep
+
+high_elf:
+  parent: elf
+  ability_score_increase:
+    intelligence: 1
+  traits:
+    elf_weapon_training:
+      description: "You    have    proficiency    with    the    longsword,shortsword,    shortbow,    and    longbow."
+    cantrip:
+      description: "You    know    one    cantrip    of    your    choice    from    the    wizard    spell    list.    Intelligence    is    your    spellcasting    ability    for    it."
+    extra_language:
+      description: "You    can    speak,    read,    and    write    one    extra    language    of    your    choice."
+      modifiers:
+        - language:
+            type: selection
+            number_to_select: 1
