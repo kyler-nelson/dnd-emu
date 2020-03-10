@@ -5,6 +5,7 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::Read;
+use std::ops::Index;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -85,6 +86,46 @@ enum Class {
     Warlock,
     Wizard,
 }
+
+const EFFECTIVE_ABILITY_SCORE_MIN: u8 = 0;
+const EFFECTIVE_ABILITY_SCORE_MAX: u8 = 30;
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
+enum Ability {
+    Strength,
+    Dexterity,
+    Constitution,
+    Intelligence,
+    Wisdom,
+    Charisma,
+}
+
+#[derive(Copy, Clone)]
+enum WeaponType {
+    Shields,
+    SimpleWeapons,
+    MartialWeapons,
+}
+#[derive(Copy, Clone)]
+enum ArmorType {
+    LightArmor,
+    MediumArmor,
+    HeavyArmor,
+}
+#[derive(Serialize, Deserialize, Debug)]
+struct CharacterAbilities([AbilityScore; 6]);
+
+impl Index<Ability> for CharacterAbilities {
+    type Output = AbilityScore;
+
+    fn index(&self, index: Ability) -> &Self::Output {
+        &self
+            .0
+            .iter()
+            .find(|&ability_score| ability_score.ability == index)
+            .expect("Ability score not found")
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Character {
     race: Race,
@@ -96,6 +137,99 @@ struct Character {
     languages: Vec<Language>,
     experience_points: u32,
     level: u32,
+    ability_scores: CharacterAbilities,
+}
+
+struct Trait {
+    name: &'static str,
+    description: &'static str,
+    weapon_proficiency_modifiers: Vec<WeaponProficiencyModifier>,
+    armor_proficiency_modifiers: Vec<ArmorProficiencyModifier>,
+    ability_proficiency_modifiers: Vec<ArmorProficiencyModifier>,
+    ability_modifiers: Vec<AbilityModifier>,
+}
+
+trait Modifier<T> {
+    fn get_name(&self) -> &'static str;
+    fn get_value(&self) -> T;
+    fn get_modifier_type(&self) -> ModifierType;
+}
+
+struct AbilityModifier {
+    name: &'static str,
+    ability: Ability,
+    value: i8,
+}
+
+struct WeaponProficiencyModifier {
+    name: &'static str,
+    value: WeaponType,
+}
+
+struct ArmorProficiencyModifier {
+    name: &'static str,
+    value: ArmorType,
+}
+
+impl Modifier<i8> for AbilityModifier {
+    fn get_name(&self) -> &'static str {
+        self.name
+    }
+
+    fn get_value(&self) -> i8 {
+        self.value
+    }
+
+    fn get_modifier_type(&self) -> ModifierType {
+        ModifierType::Ability
+    }
+}
+
+impl AbilityModifier {
+    fn get_ability(&self) -> Ability {
+        self.ability
+    }
+}
+
+impl Modifier<WeaponType> for WeaponProficiencyModifier {
+    fn get_name(&self) -> &'static str {
+        self.name
+    }
+
+    fn get_value(&self) -> WeaponType {
+        self.value
+    }
+
+    fn get_modifier_type(&self) -> ModifierType {
+        ModifierType::WeaponProficiency
+    }
+}
+
+impl Modifier<ArmorType> for ArmorProficiencyModifier {
+    fn get_name(&self) -> &'static str {
+        self.name
+    }
+
+    fn get_value(&self) -> ArmorType {
+        self.value
+    }
+
+    fn get_modifier_type(&self) -> ModifierType {
+        ModifierType::ArmorProficiency
+    }
+}
+
+enum ModifierType {
+    WeaponProficiency,
+    ArmorProficiency,
+    Ability,
+}
+
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
+struct AbilityScore {
+    ability: Ability,
+    score: u8,
+    modifier: i8,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -110,7 +244,9 @@ struct RaceInfo {
 
 fn main() {
     let races = load_races_from_file("data/races.yaml");
+    let characters = load_characters_from_file("data/characters.yaml");
     println!("{:?}", races);
+    println!("{:?}", characters);
 }
 
 fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
@@ -149,4 +285,81 @@ fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
     println!("{:?}", &races);
 
     return races;
+}
+
+fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
+    let mut file = File::open(file_path).unwrap();
+    let mut file_contents = String::new();
+    file.read_to_string(&mut file_contents).unwrap();
+
+    YamlLoader::load_from_str(&file_contents).unwrap();
+
+    let mut characters: Vec<Character> = Vec::new();
+
+    let character = Character {
+        name: "Tishros",
+        experience_points: 0,
+        level: 1,
+        race: Race::Dwarf,
+        age: 80,
+        alignment: Alignment::ChaoticNeutral,
+        size: Size::Medium,
+        speed: 25,
+        languages: vec![Language::Dwarvish],
+        ability_scores: CharacterAbilities([
+            AbilityScore {
+                ability: Ability::Strength,
+                score: 10,
+                modifier: 0,
+            },
+            AbilityScore {
+                ability: Ability::Strength,
+                score: 10,
+                modifier: 0,
+            },
+            AbilityScore {
+                ability: Ability::Strength,
+                score: 10,
+                modifier: 0,
+            },
+            AbilityScore {
+                ability: Ability::Strength,
+                score: 10,
+                modifier: 0,
+            },
+            AbilityScore {
+                ability: Ability::Strength,
+                score: 10,
+                modifier: 0,
+            },
+            AbilityScore {
+                ability: Ability::Strength,
+                score: 10,
+                modifier: 0,
+            },
+        ]),
+    };
+
+    println!("{:?}", character.ability_scores[Ability::Strength]);
+
+    characters.push(character);
+
+    let file_path = Path::new("serialize/characters.yaml");
+    let directory = file_path.parent().unwrap();
+
+    if !directory.exists() {
+        std::fs::create_dir(directory).unwrap();
+    }
+
+    let characters_output_file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(file_path)
+        .unwrap();
+
+    serde_yaml::to_writer(&characters_output_file, &characters).unwrap();
+
+    println!("{:?}", &characters);
+
+    return characters;
 }
