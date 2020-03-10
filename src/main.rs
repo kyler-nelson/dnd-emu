@@ -140,6 +140,12 @@ struct Character {
     ability_scores: CharacterAbilities,
 }
 
+impl Character {
+    fn get_ability_score(&self, ability: Ability) -> AbilityScore {
+        self.ability_scores[ability]
+    }
+}
+
 struct Trait {
     name: &'static str,
     description: &'static str,
