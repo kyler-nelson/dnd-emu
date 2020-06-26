@@ -191,12 +191,6 @@ impl Modifier<i8> for AbilityModifier {
     }
 }
 
-impl AbilityModifier {
-    fn get_ability(&self) -> Ability {
-        self.ability
-    }
-}
-
 impl Modifier<WeaponType> for WeaponProficiencyModifier {
     fn get_name(&self) -> &'static str {
         self.name
