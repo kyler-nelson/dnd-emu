@@ -1,21 +1,149 @@
 ---
-class_features:
-  Hit Points: Hit Dice:1d12 per barbarian level
-  Hit Points at 1st Level:12 + your Constitution modifier
-  Hit Points at Higher Levels:1d12 (or 7) + your Constitution modifier per barbarian level after 1s
-
-  proficiciences
-  Armor: Light armor, medium armor, shields
-  Weapons:Simple weapons, martial weapons
-  Tools:None
-  Saving Throws:Strength, Constitution
-  Skills: Choose two from Animal Handling, Athletics, Intimidation, Nature, Perception, and Survival
-
-The    Barbarian
-LevelProficiency    BonusFeaturesRagesRage    Damage
-1st+2Rage,    Unarmored    Defense2+22nd+2Reckless    Attack,    Danger    Sense
-2+23rd+2Primal    Path3+24th+2Ability    Score    Improvement
-3+25th+3Extra    Attack,Fast    Movement3+26th+3Path    feature
-4+27th+3Feral    Instinct4+28th+3Ability    Score    Improvement
-4+29th+4Brutal    Critical(1    die)4+310th+4Path    feature
-4+311th+4Relentless    4+3  
+barbarian:
+  hit_points: 1d12 per barbarian level
+  hit_points_starting: 12 + your Constitution modifier
+  hit_points_from_level: 1d12 (or 7) + your Constitution modifier per barbarian level after 1s
+  modifiers:
+    - proficiency: light_armor
+    - proficiency: medium_armor
+    - proficiency: shield
+    - proficiency: Simple weapons, martial weapons
+  tools: None
+  saving_throws:
+    - Strength
+    - Constitution
+  skills:
+    - proficiency:
+        type: selection
+        number_to_select: 2
+        proficiency_list:
+          - Animal Handling
+          - Athletics
+          - Intimidation
+          - Nature
+          - Perception
+          - Survival
+  levels:
+    1:
+      proficiency_bonus: +2
+      features:
+        - Rage
+        - Unarmored Defense
+      rages: 2
+      rage_damage: +2
+    2:
+      proficiency_bonus: +2
+      features:
+        - Reckless Attack
+        - Danger Sense
+      rages: 2
+      rage_damage: +2
+    3:
+      proficiency_bonus: +2
+      features:
+        - Primal Path
+      rages: 3
+      rage_damage: +2
+    4:
+      proficicency_bonus: +2
+      features:
+        - Ability Score Improvement
+      rages: 3
+      rage_damage: +2
+    5:
+      proficicency_bonus: +3
+      features:
+        - Extra Attack
+        - Fast Movement
+      rages: 3
+      rage_damage: +2
+    6:
+      proficicency_bonus: +3
+      features:
+        - Path feature
+      rages: 4
+      rage_damage: +2
+    7:
+      proficicency_bonus: +3
+      features:
+        - Feral Instinct
+      rages: 4
+      rage_damage: +2
+    8:
+      proficicency_bonus: +3
+      features:
+        - Ability Score Improvement
+      rages: 4
+      rage_damage: +2
+    9:
+      proficicency_bonus: +4
+      features:
+        - Brutal Critical (1 die)
+      rages: 4
+      rage_damage: +3
+    10:
+      proficicency_bonus: +4
+      features:
+        - Path feature
+      rages: 4
+      rage_damage: +3
+    11:
+      proficicency_bonus: +4
+      features:
+        - Relentless
+      rages: 4
+      rage_damage: +3
+    12:
+      proficicency_bonus: +4
+      features:
+        - Ability Score Improvement
+      rages: 5
+      rage_damage: +3
+    13:
+      proficicency_bonus: +5
+      features:
+        - Brutal Critical (2 dice)
+      rages: 5
+      rage_damage: +3
+    14:
+      proficicency_bonus: +5
+      features:
+        - Path feature
+      rages: 5
+      rage_damage: +3
+    15:
+      proficicency_bonus: +5
+      features:
+        - Persistent Rage
+      rages: 5
+      rage_damage: +3
+    16:
+      proficicency_bonus: +5
+      features:
+        - Ability Score Improvement
+      rages: 5
+      rage_damage: +4
+    17:
+      proficicency_bonus: +6
+      features:
+        - Brutal Critical (3 dice)
+      rages: 6
+      rage_damage: +4
+    18:
+      proficicency_bonus: +6
+      features:
+        - Indomitable Might
+      rages: 6
+      rage_damage: +4
+    19:
+      proficicency_bonus: +6
+      features:
+        - Ability Score Improvement
+      rages: 6
+      rage_damage: +4
+    20:
+      proficicency_bonus: +6
+      features:
+        - Primal ChampionUnlimite
+      rages: Unlimited
+      rage_damage: +4

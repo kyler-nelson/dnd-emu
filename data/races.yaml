@@ -84,9 +84,9 @@ high_elf:
     elf_weapon_training:
       description: "You    have    proficiency    with    the    longsword,shortsword,    shortbow,    and    longbow."
     cantrip:
-      description: "You    know    one    cantrip    of    your    choice    from    the    wizard    spell    list.    Intelligence    is    your    spellcasting    ability    for    it."
+      description: "You know one cantrip of your choice from the wizard spell list. Intelligence is your spellcasting ability for it."
     extra_language:
-      description: "You    can    speak,    read,    and    write    one    extra    language    of    your    choice."
+      description: "You can speak, read, and write one extra language of your choice."
       modifiers:
         - language:
             type: selection

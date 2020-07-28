@@ -1,0 +1,8 @@
+---
+modifiers:
+  - proficiency
+  - proficiency_doubled
+  - hit_point_maximum_increase
+  - darkvision
+  - saving_throws_advantage
+  - immunity

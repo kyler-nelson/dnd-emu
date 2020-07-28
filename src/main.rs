@@ -111,6 +111,7 @@ enum ArmorType {
     MediumArmor,
     HeavyArmor,
 }
+
 #[derive(Serialize, Deserialize, Debug)]
 struct CharacterAbilities([AbilityScore; 6]);
 
