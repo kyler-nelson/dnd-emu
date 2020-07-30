@@ -314,34 +314,34 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
                 modifier: 0,
             },
             AbilityScore {
-                ability: Ability::Strength,
+                ability: Ability::Dexterity,
                 score: 10,
                 modifier: 0,
             },
             AbilityScore {
-                ability: Ability::Strength,
+                ability: Ability::Constitution,
                 score: 10,
                 modifier: 0,
             },
             AbilityScore {
-                ability: Ability::Strength,
+                ability: Ability::Wisdom,
                 score: 10,
                 modifier: 0,
             },
             AbilityScore {
-                ability: Ability::Strength,
+                ability: Ability::Intelligence,
                 score: 10,
                 modifier: 0,
             },
             AbilityScore {
-                ability: Ability::Strength,
+                ability: Ability::Charisma,
                 score: 10,
                 modifier: 0,
             },
         ]),
     };
 
-    println!("{:?}", character.ability_scores[Ability::Strength]);
+    println!("{:?}", character.ability_scores);
 
     characters.push(character);
 
