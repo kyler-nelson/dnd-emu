@@ -25,6 +25,16 @@ enum Race {
     HalfOrc,
     Tiefling,
 }
+
+struct RaceAttributes {
+    age: u64,
+    alignment: Alignment,
+    size: Size,
+    speed: u16,
+    languages: Vec<Language>,
+    traits: Vec<Trait>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Subrace {
     parent: Race,
@@ -99,13 +109,13 @@ enum Ability {
     Charisma,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 enum WeaponType {
     Shields,
     SimpleWeapons,
     MartialWeapons,
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 enum ArmorType {
     LightArmor,
     MediumArmor,
@@ -136,23 +146,54 @@ struct Character {
     size: Size,
     speed: i64,
     languages: Vec<Language>,
-    experience_points: u32,
+    experience_points: u64,
     level: u32,
     ability_scores: CharacterAbilities,
+    traits: Vec<Trait>,
 }
 
 impl Character {
     fn get_ability_score(&self, ability: Ability) -> AbilityScore {
         self.ability_scores[ability]
     }
+
+    fn get_level(&self) -> u32 {
+        calculate_level_from_experience_points(self.experience_points)
+    }
+
+    fn get_proficiency_bonus(&self) -> u16 {
+        calculate_proficiency_bonus_from_experience_points(self.experience_points)
+    }
 }
 
+fn calculate_level_from_experience_points(experience_points: u64) -> u32 {
+    let mut expected_level = 1;
+    for entry in CHARACTER_ADVANCEMENT_TABLE.iter() {
+        if experience_points >= entry.required_experience_points {
+            expected_level = entry.level;
+        }
+    }
+
+    return expected_level;
+}
+
+fn calculate_proficiency_bonus_from_experience_points(experience_points: u64) -> u16 {
+    let mut expected_proficiency_bonus = 1;
+    for entry in CHARACTER_ADVANCEMENT_TABLE.iter() {
+        if experience_points >= entry.required_experience_points {
+            expected_proficiency_bonus = entry.proficiency_bonus;
+        }
+    }
+
+    return expected_proficiency_bonus;
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 struct Trait {
     name: &'static str,
     description: &'static str,
     weapon_proficiency_modifiers: Vec<WeaponProficiencyModifier>,
     armor_proficiency_modifiers: Vec<ArmorProficiencyModifier>,
-    ability_proficiency_modifiers: Vec<ArmorProficiencyModifier>,
     ability_modifiers: Vec<AbilityModifier>,
 }
 
@@ -162,17 +203,20 @@ trait Modifier<T> {
     fn get_modifier_type(&self) -> ModifierType;
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct AbilityModifier {
     name: &'static str,
     ability: Ability,
     value: i8,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct WeaponProficiencyModifier {
     name: &'static str,
     value: WeaponType,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct ArmorProficiencyModifier {
     name: &'static str,
     value: ArmorType,
@@ -220,6 +264,7 @@ impl Modifier<ArmorType> for ArmorProficiencyModifier {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 enum ModifierType {
     WeaponProficiency,
     ArmorProficiency,
@@ -243,12 +288,35 @@ struct RaceInfo {
     languages: Vec<Language>,
 }
 
-fn main() {
-    let races = load_races_from_file("data/races.yaml");
-    let characters = load_characters_from_file("data/characters.yaml");
-    println!("{:?}", races);
-    println!("{:?}", characters);
+struct CharacterAdvancementEntry {
+    level: u32,
+    required_experience_points: u64,
+    proficiency_bonus: u16,
 }
+
+#[rustfmt::skip]
+const CHARACTER_ADVANCEMENT_TABLE: [CharacterAdvancementEntry; 20] = [
+    CharacterAdvancementEntry {required_experience_points: 0,       level: 1,   proficiency_bonus: 2},
+    CharacterAdvancementEntry {required_experience_points: 300,     level: 2,   proficiency_bonus: 2},
+    CharacterAdvancementEntry {required_experience_points: 900,     level: 3,   proficiency_bonus: 2},
+    CharacterAdvancementEntry {required_experience_points: 2700,    level: 4,   proficiency_bonus: 2},
+    CharacterAdvancementEntry {required_experience_points: 6500,    level: 5,   proficiency_bonus: 3},
+    CharacterAdvancementEntry {required_experience_points: 14000,   level: 6,   proficiency_bonus: 3},
+    CharacterAdvancementEntry {required_experience_points: 23000,   level: 7,   proficiency_bonus: 3},
+    CharacterAdvancementEntry {required_experience_points: 34000,   level: 8,   proficiency_bonus: 3},
+    CharacterAdvancementEntry {required_experience_points: 48000,   level: 9,   proficiency_bonus: 4},
+    CharacterAdvancementEntry {required_experience_points: 64000,   level: 10,  proficiency_bonus: 4},
+    CharacterAdvancementEntry {required_experience_points: 85000,   level: 11,  proficiency_bonus: 4},
+    CharacterAdvancementEntry {required_experience_points: 100000,  level: 12,  proficiency_bonus: 4},
+    CharacterAdvancementEntry {required_experience_points: 120000,  level: 13,  proficiency_bonus: 5},
+    CharacterAdvancementEntry {required_experience_points: 140000,  level: 14,  proficiency_bonus: 5},
+    CharacterAdvancementEntry {required_experience_points: 165000,  level: 15,  proficiency_bonus: 5},
+    CharacterAdvancementEntry {required_experience_points: 195000,  level: 16,  proficiency_bonus: 5},
+    CharacterAdvancementEntry {required_experience_points: 225000,  level: 17,  proficiency_bonus: 6},
+    CharacterAdvancementEntry {required_experience_points: 265000,  level: 18,  proficiency_bonus: 6},
+    CharacterAdvancementEntry {required_experience_points: 305000,  level: 19,  proficiency_bonus: 6},
+    CharacterAdvancementEntry {required_experience_points: 355000,  level: 20,  proficiency_bonus: 6},
+];
 
 fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
     let mut file = File::open(file_path).unwrap();
@@ -282,8 +350,6 @@ fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
         .unwrap();
 
     serde_yaml::to_writer(&races_output_file, &races).unwrap();
-
-    println!("{:?}", &races);
 
     return races;
 }
@@ -339,9 +405,14 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
                 modifier: 0,
             },
         ]),
+        traits: vec![Trait {
+            name: "test",
+            description: "Hello",
+            weapon_proficiency_modifiers: vec![],
+            armor_proficiency_modifiers: vec![],
+            ability_modifiers: vec![],
+        }],
     };
-
-    println!("{:?}", character.ability_scores);
 
     characters.push(character);
 
@@ -360,7 +431,19 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
 
     serde_yaml::to_writer(&characters_output_file, &characters).unwrap();
 
-    println!("{:?}", &characters);
-
     return characters;
+}
+
+fn main() {
+    let races = load_races_from_file("data/races.yaml");
+    let mut characters = load_characters_from_file("data/characters.yaml");
+    println!("{:?}", races);
+    println!("{:?}", characters);
+
+    characters[0].experience_points = 0;
+    println!("{:?}", characters[0].get_level());
+    println!("{:?}", characters[0].get_proficiency_bonus());
+    characters[0].experience_points = 100000;
+    println!("{:?}", characters[0].get_level());
+    println!("{:?}", characters[0].get_proficiency_bonus());
 }

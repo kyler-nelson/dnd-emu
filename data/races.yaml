@@ -1,7 +1,5 @@
 ---
 dwarf:
-  ability_score_increase:
-    constitution: 2
   age: 50
   alignment: LawfulGood
   size: Medium
@@ -10,6 +8,8 @@ dwarf:
     - Common
     - Dwarvish
   traits:
+    ability_score_increase:
+      constitution: 2
     speed:
       description: "Speed not reduced by wearing heavy armor"
     darkvision:
