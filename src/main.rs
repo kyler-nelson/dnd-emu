@@ -191,6 +191,7 @@ fn calculate_experience_points_required_for_next_level(experience_points: u64) -
             break;
         }
     }
+
     required_experience_points
 }
 
