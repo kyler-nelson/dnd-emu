@@ -206,6 +206,10 @@ fn calculate_proficiency_bonus_from_experience_points(experience_points: u64) ->
     return expected_proficiency_bonus;
 }
 
+fn gain_level(mut character: Character) {
+    character.level = character.level + 1
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Trait {
     name: &'static str,
@@ -464,8 +468,7 @@ fn main() {
     characters[0].experience_points = 555;
     println!("{:?}", characters[0].get_level());
     println!("{:?}", characters[0].get_proficiency_bonus());
-    println!(
-        "{:?}",
-        calculate_experience_points_required_for_next_level(characters[0].experience_points)
-    );
+    dbg!(calculate_experience_points_required_for_next_level(
+        characters[0].experience_points
+    ));
 }
