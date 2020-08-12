@@ -137,6 +137,8 @@ impl Index<Ability> for CharacterAbilities {
     }
 }
 
+const EFFECTIVE_LEVEL_MIN: u32 = 1;
+const EFFECTIVE_LEVEL_MAX: u32 = 20;
 #[derive(Serialize, Deserialize, Debug)]
 struct Character {
     race: Race,
@@ -167,14 +169,27 @@ impl Character {
 }
 
 fn calculate_level_from_experience_points(experience_points: u64) -> u32 {
-    let mut expected_level = 1;
+    let mut expected_level = EFFECTIVE_LEVEL_MIN;
     for entry in CHARACTER_ADVANCEMENT_TABLE.iter() {
         if experience_points >= entry.required_experience_points {
             expected_level = entry.level;
         }
     }
 
-    return expected_level;
+    assert!(expected_level >= EFFECTIVE_LEVEL_MIN && expected_level <= EFFECTIVE_LEVEL_MAX);
+
+    expected_level
+}
+
+fn calculate_experience_points_required_for_next_level(experience_points: u64) -> u64 {
+    let mut required_experience_points = 0;
+    for entry in CHARACTER_ADVANCEMENT_TABLE.iter() {
+        if experience_points < entry.required_experience_points {
+            required_experience_points = entry.required_experience_points - experience_points;
+            break;
+        }
+    }
+    required_experience_points
 }
 
 fn calculate_proficiency_bonus_from_experience_points(experience_points: u64) -> u16 {
@@ -443,7 +458,11 @@ fn main() {
     characters[0].experience_points = 0;
     println!("{:?}", characters[0].get_level());
     println!("{:?}", characters[0].get_proficiency_bonus());
-    characters[0].experience_points = 100000;
+    characters[0].experience_points = 555;
     println!("{:?}", characters[0].get_level());
     println!("{:?}", characters[0].get_proficiency_bonus());
+    println!(
+        "{:?}",
+        calculate_experience_points_required_for_next_level(characters[0].experience_points)
+    );
 }
