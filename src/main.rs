@@ -181,6 +181,8 @@ fn calculate_level_from_experience_points(experience_points: u64) -> u32 {
     expected_level
 }
 
+// NOTE: This assumes the CHARACTER_ADVANCEMENT_TABLE is ordered by required experience points
+// as is shown in the SRD.
 fn calculate_experience_points_required_for_next_level(experience_points: u64) -> u64 {
     let mut required_experience_points = 0;
     for entry in CHARACTER_ADVANCEMENT_TABLE.iter() {
