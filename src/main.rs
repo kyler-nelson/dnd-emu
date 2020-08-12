@@ -1,3 +1,4 @@
+extern crate rand;
 extern crate serde;
 extern crate yaml_rust;
 
@@ -10,6 +11,9 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use yaml_rust::YamlLoader;
+
+use rand::distributions::{Distribution, Uniform};
+use rand::Rng;
 
 #[derive(Serialize, Deserialize, Debug)]
 enum Race {
@@ -82,7 +86,7 @@ enum Language {
 #[derive(Serialize, Deserialize, Debug)]
 enum Background {}
 #[derive(Serialize, Deserialize, Debug)]
-enum Class {
+enum ClassType {
     Barbarian,
     Bard,
     Cleric,
@@ -95,6 +99,28 @@ enum Class {
     Sorceror,
     Warlock,
     Wizard,
+}
+
+struct Die {
+    min: u16,
+    max: u16,
+}
+
+fn roll_die(die: Die) -> u16 {
+    let mut rng = rand::thread_rng();
+    let die_range = Uniform::from(die.min..die.max);
+    die_range.sample(&mut rng)
+}
+
+struct ClassFeatures {
+    hit_dice: Die,
+    hit_points_starting: u16,
+    hit_points_from_level: Die,
+}
+
+struct Class {
+    class: ClassType,
+    features: ClassFeatures,
 }
 
 const EFFECTIVE_ABILITY_SCORE_MIN: u8 = 0;
@@ -152,6 +178,7 @@ struct Character {
     level: u32,
     ability_scores: CharacterAbilities,
     traits: Vec<Trait>,
+    roll_hit_points: bool,
 }
 
 impl Character {
@@ -207,6 +234,8 @@ fn calculate_proficiency_bonus_from_experience_points(experience_points: u64) ->
 }
 
 fn gain_level(mut character: Character) {
+    character.roll_hit_points = true;
+    character.roll_hit_points = true;
     character.level = character.level + 1
 }
 
@@ -434,6 +463,7 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
             armor_proficiency_modifiers: vec![],
             ability_modifiers: vec![],
         }],
+        roll_hit_points: false,
     };
 
     characters.push(character);
@@ -471,4 +501,5 @@ fn main() {
     dbg!(calculate_experience_points_required_for_next_level(
         characters[0].experience_points
     ));
+    dbg!(roll_die(Die { min: 1, max: 6 }));
 }
