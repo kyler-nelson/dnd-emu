@@ -193,6 +193,18 @@ impl Character {
     fn get_proficiency_bonus(&self) -> u16 {
         calculate_proficiency_bonus_from_experience_points(self.experience_points)
     }
+
+    fn gain_level(&mut self) {
+        if self.level != calculate_level_from_experience_points(self.experience_points) {
+            self.roll_hit_points = true;
+            self.add_class_features_for_level();
+            self.level = self.level + 1;
+        }
+    }
+
+    fn add_class_features_for_level(&self) {
+        todo!();
+    }
 }
 
 fn calculate_level_from_experience_points(experience_points: u64) -> u32 {
@@ -223,20 +235,14 @@ fn calculate_experience_points_required_for_next_level(experience_points: u64) -
 }
 
 fn calculate_proficiency_bonus_from_experience_points(experience_points: u64) -> u16 {
-    let mut expected_proficiency_bonus = 1;
+    let default_proficiency_bonus = 1;
     for entry in CHARACTER_ADVANCEMENT_TABLE.iter() {
         if experience_points >= entry.required_experience_points {
-            expected_proficiency_bonus = entry.proficiency_bonus;
+            return entry.proficiency_bonus;
         }
     }
 
-    return expected_proficiency_bonus;
-}
-
-fn gain_level(mut character: Character) {
-    character.roll_hit_points = true;
-    character.roll_hit_points = true;
-    character.level = character.level + 1
+    default_proficiency_bonus
 }
 
 #[derive(Serialize, Deserialize, Debug)]
