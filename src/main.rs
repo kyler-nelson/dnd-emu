@@ -119,7 +119,7 @@ struct ClassFeatures {
 }
 
 struct Class {
-    class: ClassType,
+    class_type: ClassType,
     features: ClassFeatures,
 }
 
@@ -181,6 +181,12 @@ struct Character {
     roll_hit_points: bool,
 }
 
+const MIN_SPELL_LEVEL: u8 = 0;
+const MAX_SPELL_LEVEL: u8 = 9;
+struct Spell {
+    level: u8,
+}
+
 impl Character {
     fn get_ability_score(&self, ability: Ability) -> AbilityScore {
         self.ability_scores[ability]
@@ -205,6 +211,76 @@ impl Character {
     fn add_class_features_for_level(&self) {
         todo!();
     }
+}
+
+struct SpellSlotEntry {
+    level: u32,
+    spell_level_count: [u8; 10],
+}
+
+#[rustfmt::skip]
+const WIZARD_SPELL_SLOTS_PER_SPELL_LEVEL: [SpellSlotEntry; 20] = [
+    SpellSlotEntry {level: 1,  spell_level_count: [3,2,0,0,0,0,0,0,0,0] },
+    SpellSlotEntry {level: 2,  spell_level_count: [3,3,0,0,0,0,0,0,0,0] },
+    SpellSlotEntry {level: 3,  spell_level_count: [3,4,2,0,0,0,0,0,0,0] },
+    SpellSlotEntry {level: 4,  spell_level_count: [4,4,3,0,0,0,0,0,0,0] },
+    SpellSlotEntry {level: 5,  spell_level_count: [4,4,3,2,0,0,0,0,0,0] },
+    SpellSlotEntry {level: 6,  spell_level_count: [4,4,3,3,0,0,0,0,0,0] },
+    SpellSlotEntry {level: 7,  spell_level_count: [4,4,3,3,1,0,0,0,0,0] },
+    SpellSlotEntry {level: 8,  spell_level_count: [4,4,3,3,2,0,0,0,0,0] },
+    SpellSlotEntry {level: 9,  spell_level_count: [4,4,3,3,3,1,0,0,0,0] },
+    SpellSlotEntry {level: 10, spell_level_count: [5,4,3,3,3,2,0,0,0,0] },
+    SpellSlotEntry {level: 11, spell_level_count: [5,4,3,3,3,2,1,0,0,0] },
+    SpellSlotEntry {level: 12, spell_level_count: [5,4,3,3,3,2,1,0,0,0] },
+    SpellSlotEntry {level: 13, spell_level_count: [5,4,3,3,3,2,1,1,0,0] },
+    SpellSlotEntry {level: 14, spell_level_count: [5,4,3,3,3,2,1,1,0,0] },
+    SpellSlotEntry {level: 15, spell_level_count: [5,4,3,3,3,2,1,1,1,0] },
+    SpellSlotEntry {level: 16, spell_level_count: [5,4,3,3,3,2,1,1,1,0] },
+    SpellSlotEntry {level: 17, spell_level_count: [5,4,3,3,3,2,1,1,1,1] },
+    SpellSlotEntry {level: 18, spell_level_count: [5,4,3,3,3,3,1,1,1,1] },
+    SpellSlotEntry {level: 19, spell_level_count: [5,4,3,3,3,3,2,1,1,1] },
+    SpellSlotEntry {level: 20, spell_level_count: [5,4,3,3,3,3,2,2,1,1] },
+];
+
+fn get_number_of_spell_slots_per_spell_level(class: Class, level: u32, spell_level: u8) -> u8 {
+    let default_spell_slots = 0;
+
+    match class.class_type {
+        ClassType::Barbarian => todo!(),
+        ClassType::Cleric => todo!(),
+        ClassType::Fighter => todo!(),
+        ClassType::Monk => todo!(),
+        ClassType::Paladin => todo!(),
+        ClassType::Ranger => todo!(),
+        ClassType::Rogue => todo!(),
+        ClassType::Sorceror => todo!(),
+        ClassType::Bard => todo!(),
+        ClassType::Druid => todo!(),
+        ClassType::Warlock => todo!(),
+        ClassType::Wizard => {
+            find_spell_splots_for_spell_level(
+                WIZARD_SPELL_SLOTS_PER_SPELL_LEVEL,
+                level,
+                spell_level,
+            );
+        }
+    }
+
+    default_spell_slots
+}
+
+fn find_spell_splots_for_spell_level(
+    spell_slots_per_spell_level_table: [SpellSlotEntry; 20],
+    level: u32,
+    spell_level: u8,
+) -> u8 {
+    for entry in spell_slots_per_spell_level_table.iter() {
+        if level == entry.level {
+            return entry.spell_level_count[spell_level as usize];
+        }
+    }
+
+    0
 }
 
 fn calculate_level_from_experience_points(experience_points: u64) -> u32 {
@@ -508,4 +584,14 @@ fn main() {
         characters[0].experience_points
     ));
     dbg!(roll_die(Die { min: 1, max: 6 }));
+
+    let wizard = Class {
+        class_type: ClassType::Wizard,
+        features: ClassFeatures {
+            hit_dice: Die { min: 0, max: 6 },
+            hit_points_starting: 0,
+            hit_points_from_level: Die { min: 0, max: 6 },
+        },
+    };
+    dbg!(get_number_of_spell_slots_per_spell_level(wizard, 1, 1));
 }
