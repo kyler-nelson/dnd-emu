@@ -258,7 +258,7 @@ fn get_number_of_spell_slots_per_spell_level(class: Class, level: u32, spell_lev
         ClassType::Druid => todo!(),
         ClassType::Warlock => todo!(),
         ClassType::Wizard => {
-            find_spell_splots_for_spell_level(
+            return find_spell_splots_for_spell_level(
                 WIZARD_SPELL_SLOTS_PER_SPELL_LEVEL,
                 level,
                 spell_level,
@@ -593,5 +593,5 @@ fn main() {
             hit_points_from_level: Die { min: 0, max: 6 },
         },
     };
-    dbg!(get_number_of_spell_slots_per_spell_level(wizard, 1, 1));
+    dbg!(get_number_of_spell_slots_per_spell_level(wizard, 20, 9));
 }
