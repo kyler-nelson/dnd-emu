@@ -135,14 +135,48 @@ enum Ability {
     Charisma,
 }
 
+struct Weapon {
+    name: &'static str,
+    cost: u32,
+    damage: DamageRange,
+    weapon_type: WeaponType,
+    category: WeaponCategory,
+    properties: Vec<WeaponProperty>,
+}
 #[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 enum WeaponType {
+    Melee,
+    Ranged,
+}
+
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
+enum WeaponCategory {
     Shields,
     SimpleWeapons,
     MartialWeapons,
 }
+
+enum WeaponProperty {
+    Ammunition,
+    Finesse,
+    Heavy,
+    Light,
+    Loading,
+    Range,
+    Reach,
+    Special,
+    Thrown,
+    TwoHanded,
+    Versatile,
+}
+
+struct DamageRange {
+    min: u32,
+    max: u32,
+}
+
 #[derive(Copy, Clone, Serialize, Deserialize, Debug)]
-enum ArmorType {
+enum ArmorCategory {
     LightArmor,
     MediumArmor,
     HeavyArmor,
@@ -348,7 +382,7 @@ struct WeaponProficiencyModifier {
 #[derive(Serialize, Deserialize, Debug)]
 struct ArmorProficiencyModifier {
     name: &'static str,
-    value: ArmorType,
+    value: ArmorCategory,
 }
 
 impl Modifier<i8> for AbilityModifier {
@@ -379,12 +413,12 @@ impl Modifier<WeaponType> for WeaponProficiencyModifier {
     }
 }
 
-impl Modifier<ArmorType> for ArmorProficiencyModifier {
+impl Modifier<ArmorCategory> for ArmorProficiencyModifier {
     fn get_name(&self) -> &'static str {
         self.name
     }
 
-    fn get_value(&self) -> ArmorType {
+    fn get_value(&self) -> ArmorCategory {
         self.value
     }
 
