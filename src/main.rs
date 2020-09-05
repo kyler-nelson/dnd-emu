@@ -589,5 +589,6 @@ fn main() {
             hit_points_from_level: Die { min: 0, max: 6 },
         },
     };
-    dbg!(get_number_of_spell_slots_per_spell_level(wizard, 20, 9));
+
+    dbg!(get_number_of_spell_slots_per_spell_level(wizard, 20, 1));
 }
