@@ -243,8 +243,6 @@ const WIZARD_SPELL_SLOTS_PER_SPELL_LEVEL: [SpellSlotEntry; 20] = [
 ];
 
 fn get_number_of_spell_slots_per_spell_level(class: Class, level: u32, spell_level: u8) -> u8 {
-    let default_spell_slots = 0;
-
     match class.class_type {
         ClassType::Barbarian => todo!(),
         ClassType::Cleric => todo!(),
@@ -265,8 +263,6 @@ fn get_number_of_spell_slots_per_spell_level(class: Class, level: u32, spell_lev
             );
         }
     }
-
-    default_spell_slots
 }
 
 fn find_spell_splots_for_spell_level(
