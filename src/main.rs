@@ -13,7 +13,6 @@ use serde::{Deserialize, Serialize};
 use yaml_rust::YamlLoader;
 
 use rand::distributions::{Distribution, Uniform};
-use rand::Rng;
 
 #[derive(Serialize, Deserialize, Debug)]
 enum Race {
@@ -247,6 +246,8 @@ impl Character {
     }
 }
 
+const EFFECTIVE_SPELL_LEVEL_MIN: u8 = 1;
+const EFFECTIVE_SPELL_LEVEL_MAX: u8 = 9;
 struct SpellSlotEntry {
     level: u32,
     spell_level_count: [u8; 10],
@@ -276,7 +277,7 @@ const WIZARD_SPELL_SLOTS_PER_SPELL_LEVEL: [SpellSlotEntry; 20] = [
     SpellSlotEntry {level: 20, spell_level_count: [5,4,3,3,3,3,2,2,1,1] },
 ];
 
-fn get_number_of_spell_slots_per_spell_level(class: Class, level: u32, spell_level: u8) -> u8 {
+fn get_number_of_spell_slots_for_spell_level(class: Class, level: u32, spell_level: u8) -> u8 {
     match class.class_type {
         ClassType::Barbarian => todo!(),
         ClassType::Cleric => todo!(),
@@ -304,9 +305,12 @@ fn find_spell_splots_for_spell_level(
     level: u32,
     spell_level: u8,
 ) -> u8 {
+    assert!(spell_level >= EFFECTIVE_SPELL_LEVEL_MIN && spell_level <= EFFECTIVE_SPELL_LEVEL_MAX);
+
+    let indexed_spell_level = spell_level - 1;
     for entry in spell_slots_per_spell_level_table.iter() {
         if level == entry.level {
-            return entry.spell_level_count[spell_level as usize];
+            return entry.spell_level_count[indexed_spell_level as usize];
         }
     }
 
@@ -326,8 +330,6 @@ fn calculate_level_from_experience_points(experience_points: u64) -> u32 {
     expected_level
 }
 
-// NOTE: This assumes the CHARACTER_ADVANCEMENT_TABLE is ordered by required experience points
-// as is shown in the SRD.
 fn calculate_experience_points_required_for_next_level(experience_points: u64) -> u64 {
     let mut required_experience_points = 0;
     for entry in CHARACTER_ADVANCEMENT_TABLE.iter() {
@@ -357,7 +359,6 @@ struct Trait {
     description: &'static str,
     weapon_proficiency_modifiers: Vec<WeaponProficiencyModifier>,
     armor_proficiency_modifiers: Vec<ArmorProficiencyModifier>,
-    ability_modifiers: Vec<AbilityModifier>,
 }
 
 trait Modifier<T> {
@@ -366,11 +367,17 @@ trait Modifier<T> {
     fn get_modifier_type(&self) -> ModifierType;
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct AbilityModifier {
-    name: &'static str,
-    ability: Ability,
-    value: i8,
+const INITIAL_ABILITY_SCORE: u8 = 10;
+const MIN_ABILITY_MODIFIER_LEVEL: i8 = -5;
+const MAX_ABILITY_MODIFIER_LEVEL: i8 = 10;
+fn derive_ability_modifier_from_ability_score(score: u8) -> i8 {
+    let ability_modifier: f32 = (score as f32 - INITIAL_ABILITY_SCORE as f32) / 2.0;
+    let floored_ability_score = ability_modifier.floor() as i8;
+    assert!(
+        floored_ability_score >= MIN_ABILITY_MODIFIER_LEVEL
+            && floored_ability_score <= MAX_ABILITY_MODIFIER_LEVEL
+    );
+    return floored_ability_score;
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -383,20 +390,6 @@ struct WeaponProficiencyModifier {
 struct ArmorProficiencyModifier {
     name: &'static str,
     value: ArmorCategory,
-}
-
-impl Modifier<i8> for AbilityModifier {
-    fn get_name(&self) -> &'static str {
-        self.name
-    }
-
-    fn get_value(&self) -> i8 {
-        self.value
-    }
-
-    fn get_modifier_type(&self) -> ModifierType {
-        ModifierType::Ability
-    }
 }
 
 impl Modifier<WeaponType> for WeaponProficiencyModifier {
@@ -573,7 +566,6 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
             description: "Hello",
             weapon_proficiency_modifiers: vec![],
             armor_proficiency_modifiers: vec![],
-            ability_modifiers: vec![],
         }],
         roll_hit_points: false,
     };
@@ -624,5 +616,51 @@ fn main() {
         },
     };
 
-    dbg!(get_number_of_spell_slots_per_spell_level(wizard, 20, 1));
+    get_number_of_spell_slots_for_spell_level(wizard, 20, 1);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test() {
+        let score_modifier_table: [i8; 30] = [
+            -5, // 1
+            -4, // 2
+            -4, // 3
+            -3, // 4
+            -3, // 4
+            -2, // 6
+            -2, // 7
+            -1, // 8
+            -1, // 0
+            0,  // 10
+            0,  // 11
+            1,  // 12
+            1,  // 13
+            2,  // 14
+            2,  // 15
+            3,  // 16
+            3,  // 17
+            4,  // 18
+            4,  // 19
+            5,  // 20
+            5,  // 21
+            6,  // 22
+            6,  // 23
+            7,  // 24
+            7,  // 25
+            8,  // 26
+            8,  // 27
+            9,  // 28
+            9,  // 29
+            10, // 30
+        ];
+        for (index, &score_modifier) in score_modifier_table.iter().enumerate() {
+            assert_eq!(
+                derive_ability_modifier_from_ability_score(index as u8 + 1),
+                score_modifier
+            );
+        }
+    }
 }
