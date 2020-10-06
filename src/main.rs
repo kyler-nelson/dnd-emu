@@ -623,7 +623,7 @@ fn main() {
 mod tests {
     use super::*;
     #[test]
-    fn test() {
+    fn verify_ability_score_calculation() {
         let score_modifier_table: [i8; 30] = [
             -5, // 1
             -4, // 2
