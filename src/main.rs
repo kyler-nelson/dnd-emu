@@ -100,6 +100,7 @@ enum ClassType {
     Wizard,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct Die {
     min: u16,
     max: u16,
@@ -111,12 +112,14 @@ fn roll_die(die: Die) -> u16 {
     die_range.sample(&mut rng)
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct ClassFeatures {
     hit_dice: Die,
     hit_points_starting: u16,
     hit_points_from_level: Die,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct Class {
     class_type: ClassType,
     features: ClassFeatures,
@@ -203,6 +206,7 @@ struct Character {
     race: Race,
     name: &'static str,
     age: u32,
+    class: Class,
     alignment: Alignment,
     size: Size,
     speed: i64,
@@ -225,7 +229,7 @@ impl Character {
         self.ability_scores[ability]
     }
 
-    fn get_level(&self) -> u32 {
+    fn get_current_level(&self) -> u32 {
         calculate_level_from_experience_points(self.experience_points)
     }
 
@@ -234,10 +238,24 @@ impl Character {
     }
 
     fn gain_level(&mut self) {
-        if self.level != calculate_level_from_experience_points(self.experience_points) {
-            self.roll_hit_points = true;
-            self.add_class_features_for_level();
-            self.level = self.level + 1;
+        let target_level = calculate_level_from_experience_points(self.experience_points);
+        match target_level {
+            target_level if self.level < target_level => {
+                while self.level != target_level {
+                    self.roll_hit_points = true; //@TODO: Create map of health rolled at each level
+                    self.add_class_features_for_level();
+                    self.level = self.level + 1;
+                }
+            }
+            target_level if self.level > target_level => {
+                // Handle when someone is overleveled. Return resources?
+            }
+            target_level if self.level == target_level => {
+                // Do nothing if already at level
+            }
+            _ => {
+                // Take no action
+            }
         }
     }
 
@@ -524,6 +542,14 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
         experience_points: 0,
         level: 1,
         race: Race::Dwarf,
+        class: Class {
+            class_type: ClassType::Barbarian,
+            features: ClassFeatures {
+                hit_dice: Die { min: 0, max: 6 },
+                hit_points_starting: 0,
+                hit_points_from_level: Die { min: 0, max: 6 },
+            },
+        },
         age: 80,
         alignment: Alignment::ChaoticNeutral,
         size: Size::Medium,
@@ -597,10 +623,10 @@ fn main() {
     println!("{:?}", characters);
 
     characters[0].experience_points = 0;
-    println!("{:?}", characters[0].get_level());
+    println!("{:?}", characters[0].get_current_level());
     println!("{:?}", characters[0].get_proficiency_bonus());
     characters[0].experience_points = 555;
-    println!("{:?}", characters[0].get_level());
+    println!("{:?}", characters[0].get_current_level());
     println!("{:?}", characters[0].get_proficiency_bonus());
     dbg!(calculate_experience_points_required_for_next_level(
         characters[0].experience_points
