@@ -11,3 +11,4 @@ rand = "0.7"
 yaml-rust = "0.4.3"
 serde = { version = "1.0.104", features = ["derive"] }
 serde_yaml = "0.8.11"
+uom = "0.30.0"

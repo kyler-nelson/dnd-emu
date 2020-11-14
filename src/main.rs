@@ -1,3 +1,9 @@
+#[macro_use]
+extern crate uom;
+
+use uom::fmt::DisplayStyle::Abbreviation;
+use uom::si::f32::*;
+
 extern crate rand;
 extern crate serde;
 extern crate yaml_rust;
@@ -137,6 +143,8 @@ enum Ability {
     Charisma,
 }
 
+trait Item {}
+
 struct Weapon {
     name: &'static str,
     cost: u32,
@@ -206,7 +214,7 @@ struct Character {
     race: Race,
     name: &'static str,
     age: u32,
-    class: Class,
+    class: Vec<Class>,
     alignment: Alignment,
     size: Size,
     speed: i64,
@@ -542,14 +550,14 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
         experience_points: 0,
         level: 1,
         race: Race::Dwarf,
-        class: Class {
+        class: vec![Class {
             class_type: ClassType::Barbarian,
             features: ClassFeatures {
                 hit_dice: Die { min: 0, max: 6 },
                 hit_points_starting: 0,
                 hit_points_from_level: Die { min: 0, max: 6 },
             },
-        },
+        }],
         age: 80,
         alignment: Alignment::ChaoticNeutral,
         size: Size::Medium,
@@ -616,6 +624,56 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
     return characters;
 }
 
+// https://docs.rs/crate/uom/0.30.0/source/examples/mks.rs
+
+#[macro_use]
+mod coin {
+    quantity! {
+        /// Coin (base unit copper, cp).
+        quantity: Coin; "coin";
+        /// Coin dimension, cp.
+        dimension: Q<Z0>; // amount
+        units {
+            @copper: 1.0; "cp", "copper", "copper";
+            @silver: 10.0; "sp", "silver", "silver";
+            @electrum: 50.0; "ep", "electrum", "electrum";
+            @gold: 100.0; "gp", "gold", "gold";
+            @platinum: 1000.0; "pp", "platinum", "platinum";
+        }
+    }
+}
+
+system! {
+    quantities: Q {
+        coin: copper, C;
+    }
+
+    units: U {
+        mod coin::Coin,
+    }
+}
+
+mod f32 {
+    mod mks {
+        pub use super::super::*;
+    }
+
+    Q!(self::mks, f32);
+}
+
+// Found out how to get Coin defined as a struct
+struct Inventory {
+    coin: Quantity<
+        dyn Dimension<Kind = dyn uom::Kind, C = uom::typenum::Z0>,
+        dyn Units<f32, coin = coin::copper>,
+        f32,
+    >,
+}
+
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>())
+}
+
 fn main() {
     let races = load_races_from_file("data/races.yaml");
     let mut characters = load_characters_from_file("data/characters.yaml");
@@ -643,6 +701,20 @@ fn main() {
     };
 
     get_number_of_spell_slots_for_spell_level(wizard, 20, 1);
+
+    let copper_amount = f32::Coin::new::<coin::copper>(100.0);
+    let platinum_amount = f32::Coin::new::<coin::platinum>(100.0);
+    let inventory = Inventory {
+        coin: platinum_amount,
+    };
+
+    println!(
+        "platinum = {}, gold = {}",
+        (copper_amount + platinum_amount).into_format_args(coin::platinum, Abbreviation),
+        inventory.coin.into_format_args(coin::gold, Abbreviation),
+    );
+
+    print_type_of(&copper_amount);
 }
 
 #[cfg(test)]
