@@ -1,12 +1,11 @@
+extern crate rand;
+extern crate serde;
+extern crate yaml_rust;
+
 #[macro_use]
 extern crate uom;
 
 use uom::fmt::DisplayStyle::Abbreviation;
-use uom::si::f32::*;
-
-extern crate rand;
-extern crate serde;
-extern crate yaml_rust;
 
 use std::fmt::Debug;
 use std::fs::File;
@@ -19,6 +18,43 @@ use serde::{Deserialize, Serialize};
 use yaml_rust::YamlLoader;
 
 use rand::distributions::{Distribution, Uniform};
+
+// https://docs.rs/crate/uom/0.30.0/source/examples/mks.rs
+
+#[macro_use]
+mod coin {
+    quantity! {
+        /// Coin (base unit copper, cp).
+        quantity: Coin; "coin";
+        /// Coin dimension, cp.
+        dimension: Q<Z0>; // amount
+        units {
+            @copper: 1.0; "cp", "copper", "copper";
+            @silver: 10.0; "sp", "silver", "silver";
+            @electrum: 50.0; "ep", "electrum", "electrum";
+            @gold: 100.0; "gp", "gold", "gold";
+            @platinum: 1000.0; "pp", "platinum", "platinum";
+        }
+    }
+}
+
+system! {
+    quantities: Q {
+        coin: copper, C;
+    }
+
+    units: U {
+        mod coin::Coin,
+    }
+}
+
+mod f32 {
+    mod mks {
+        pub use super::super::*;
+    }
+
+    Q!(self::mks, f32);
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 enum Race {
@@ -623,51 +659,27 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
 
     return characters;
 }
-
-// https://docs.rs/crate/uom/0.30.0/source/examples/mks.rs
-
-#[macro_use]
-mod coin {
-    quantity! {
-        /// Coin (base unit copper, cp).
-        quantity: Coin; "coin";
-        /// Coin dimension, cp.
-        dimension: Q<Z0>; // amount
-        units {
-            @copper: 1.0; "cp", "copper", "copper";
-            @silver: 10.0; "sp", "silver", "silver";
-            @electrum: 50.0; "ep", "electrum", "electrum";
-            @gold: 100.0; "gp", "gold", "gold";
-            @platinum: 1000.0; "pp", "platinum", "platinum";
-        }
-    }
+// coin: f32::Coin,
+struct Wealth {
+    copper: f32::Coin,
+    silver: f32::Coin,
+    electrum: f32::Coin,
+    gold: f32::Coin,
+    platinum: f32::Coin,
 }
 
-system! {
-    quantities: Q {
-        coin: copper, C;
-    }
-
-    units: U {
-        mod coin::Coin,
-    }
+trait WealthManagement {
+    fn add_copper(&mut self, amount: f32);
+    fn remove_copper(&mut self, amount: f32);
 }
 
-mod f32 {
-    mod mks {
-        pub use super::super::*;
+impl WealthManagement for Wealth {
+    fn add_copper(&mut self, amount: f32) {
+        self.copper += f32::Coin::new::<coin::copper>(amount);
     }
-
-    Q!(self::mks, f32);
-}
-
-// Found out how to get Coin defined as a struct
-struct Inventory {
-    coin: Quantity<
-        dyn Dimension<Kind = dyn uom::Kind, C = uom::typenum::Z0>,
-        dyn Units<f32, coin = coin::copper>,
-        f32,
-    >,
+    fn remove_copper(&mut self, amount: f32) {
+        self.copper -= f32::Coin::new::<coin::copper>(amount);
+    }
 }
 
 fn print_type_of<T>(_: &T) {
@@ -704,17 +716,19 @@ fn main() {
 
     let copper_amount = f32::Coin::new::<coin::copper>(100.0);
     let platinum_amount = f32::Coin::new::<coin::platinum>(100.0);
-    let inventory = Inventory {
-        coin: platinum_amount,
+    let wealth = Wealth {
+        copper: f32::Coin::new::<coin::copper>(100.0),
+        silver: f32::Coin::new::<coin::silver>(100.0),
+        electrum: f32::Coin::new::<coin::electrum>(100.0),
+        gold: f32::Coin::new::<coin::gold>(100.0),
+        platinum: f32::Coin::new::<coin::platinum>(100.0),
     };
 
     println!(
         "platinum = {}, gold = {}",
         (copper_amount + platinum_amount).into_format_args(coin::platinum, Abbreviation),
-        inventory.coin.into_format_args(coin::gold, Abbreviation),
+        wealth.silver.into_format_args(coin::gold, Abbreviation),
     );
-
-    print_type_of(&copper_amount);
 }
 
 #[cfg(test)]
