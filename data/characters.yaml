@@ -1,0 +1,46 @@
+---
+- race: Dwarf
+  name: Tishros
+  age: 80
+  class:
+    - class_type: Barbarian
+      features:
+        hit_dice:
+          min: 0
+          max: 6
+        hit_points_starting: 0
+        hit_points_from_level:
+          min: 0
+          max: 6
+  alignment: ChaoticNeutral
+  size: Medium
+  speed: 25
+  languages:
+    - Dwarvish
+  experience_points: 0
+  level: 1
+  ability_scores:
+    - ability: Strength
+      score: 10
+      modifier: 0
+    - ability: Dexterity
+      score: 10
+      modifier: 0
+    - ability: Constitution
+      score: 10
+      modifier: 0
+    - ability: Wisdom
+      score: 10
+      modifier: 0
+    - ability: Intelligence
+      score: 10
+      modifier: 0
+    - ability: Charisma
+      score: 10
+      modifier: 0
+  traits:
+    - name: test
+      description: Hello
+      weapon_proficiency_modifiers: []
+      armor_proficiency_modifiers: []
+  roll_hit_points: false

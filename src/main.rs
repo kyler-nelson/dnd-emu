@@ -688,19 +688,20 @@ fn print_type_of<T>(_: &T) {
 
 fn main() {
     let races = load_races_from_file("data/races.yaml");
-    let mut characters = load_characters_from_file("data/characters.yaml");
     println!("{:?}", races);
-    println!("{:?}", characters);
+    // let mut characters = load_characters_from_file("data/characters.yaml");
+    // println!("{:?}", characters);
 
-    characters[0].experience_points = 0;
-    println!("{:?}", characters[0].get_current_level());
-    println!("{:?}", characters[0].get_proficiency_bonus());
-    characters[0].experience_points = 555;
-    println!("{:?}", characters[0].get_current_level());
-    println!("{:?}", characters[0].get_proficiency_bonus());
-    dbg!(calculate_experience_points_required_for_next_level(
-        characters[0].experience_points
-    ));
+    // characters[0].experience_points = 0;
+    // println!("{:?}", characters[0].get_current_level());
+    // println!("{:?}", characters[0].get_proficiency_bonus());
+    // characters[0].experience_points = 555;
+    // println!("{:?}", characters[0].get_current_level());
+    // println!("{:?}", characters[0].get_proficiency_bonus());
+    // dbg!(calculate_experience_points_required_for_next_level(
+    //     characters[0].experience_points
+    // ));
+
     dbg!(roll_die(Die { min: 1, max: 6 }));
 
     let wizard = Class {
@@ -734,6 +735,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn verify_ability_score_calculation() {
         let score_modifier_table: [i8; 30] = [
@@ -774,5 +776,21 @@ mod tests {
                 score_modifier
             );
         }
+    }
+
+    #[test]
+    fn verify_wealth_base_currency() {
+        let wealth = Wealth {
+            copper: f32::Coin::new::<coin::copper>(100.0),
+            silver: f32::Coin::new::<coin::silver>(100.0),
+            electrum: f32::Coin::new::<coin::electrum>(100.0),
+            gold: f32::Coin::new::<coin::gold>(100.0),
+            platinum: f32::Coin::new::<coin::platinum>(100.0),
+        };
+
+        assert_eq!(
+            wealth.copper + wealth.silver + wealth.gold + wealth.platinum,
+            f32::Coin::new::<coin::copper>(111100.0)
+        )
     }
 }
