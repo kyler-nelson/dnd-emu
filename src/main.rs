@@ -216,6 +216,7 @@ enum WeaponProperty {
     Versatile,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
 struct DamageRange {
     min: u32,
     max: u32,
@@ -536,13 +537,34 @@ const CHARACTER_ADVANCEMENT_TABLE: [CharacterAdvancementEntry; 20] = [
     CharacterAdvancementEntry {required_experience_points: 355000,  level: 20,  proficiency_bonus: 6},
 ];
 
+// coin: f32::Coin,
+struct Wealth {
+    copper: f32::Coin,
+    silver: f32::Coin,
+    electrum: f32::Coin,
+    gold: f32::Coin,
+    platinum: f32::Coin,
+}
+
+trait WealthManagement {
+    fn add_copper(&mut self, amount: f32);
+    fn remove_copper(&mut self, amount: f32);
+}
+
+impl WealthManagement for Wealth {
+    fn add_copper(&mut self, amount: f32) {
+        self.copper += f32::Coin::new::<coin::copper>(amount);
+    }
+    fn remove_copper(&mut self, amount: f32) {
+        self.copper -= f32::Coin::new::<coin::copper>(amount);
+    }
+}
+
+fn print_type_of<T>(_: &T) {
+    println!("{}", std::any::type_name::<T>())
+}
+
 fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
-    let mut file = File::open(file_path).unwrap();
-    let mut file_contents = String::new();
-    file.read_to_string(&mut file_contents).unwrap();
-
-    YamlLoader::load_from_str(&file_contents).unwrap();
-
     let mut races: Vec<RaceInfo> = Vec::new();
 
     races.push(RaceInfo {
@@ -573,12 +595,6 @@ fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
 }
 
 fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
-    let mut file = File::open(file_path).unwrap();
-    let mut file_contents = String::new();
-    file.read_to_string(&mut file_contents).unwrap();
-
-    YamlLoader::load_from_str(&file_contents).unwrap();
-
     let mut characters: Vec<Character> = Vec::new();
 
     let character = Character {
@@ -642,7 +658,7 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
 
     characters.push(character);
 
-    let file_path = Path::new("serialize/characters.yaml");
+    let file_path = Path::new("./serialize/characters.yaml");
     let directory = file_path.parent().unwrap();
 
     if !directory.exists() {
@@ -655,53 +671,55 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
         .open(file_path)
         .unwrap();
 
-    serde_yaml::to_writer(&characters_output_file, &characters).unwrap();
+    let dr = DamageRange { min: 0, max: 2 };
+
+    serde_yaml::to_writer(&characters_output_file, &dr).unwrap();
 
     return characters;
 }
-// coin: f32::Coin,
-struct Wealth {
-    copper: f32::Coin,
-    silver: f32::Coin,
-    electrum: f32::Coin,
-    gold: f32::Coin,
-    platinum: f32::Coin,
-}
 
-trait WealthManagement {
-    fn add_copper(&mut self, amount: f32);
-    fn remove_copper(&mut self, amount: f32);
-}
+fn test_yaml(file_path: &'static str) {
+    let file_path = Path::new("./test.yaml");
 
-impl WealthManagement for Wealth {
-    fn add_copper(&mut self, amount: f32) {
-        self.copper += f32::Coin::new::<coin::copper>(amount);
-    }
-    fn remove_copper(&mut self, amount: f32) {
-        self.copper -= f32::Coin::new::<coin::copper>(amount);
-    }
-}
+    let characters_output_file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(file_path)
+        .unwrap();
 
-fn print_type_of<T>(_: &T) {
-    println!("{}", std::any::type_name::<T>())
+    let dr = DamageRange { min: 0, max: 2 };
+
+    serde_yaml::to_writer(&characters_output_file, &dr).unwrap();
 }
 
 fn main() {
+    let file_path = Path::new("./test.yaml");
+
+    let characters_output_file = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .open(file_path)
+        .unwrap();
+
+    let dr = DamageRange { min: 0, max: 2 };
+
+    serde_yaml::to_writer(&characters_output_file, &dr).unwrap();
+
     let races = load_races_from_file("data/races.yaml");
     println!("{:?}", races);
-    // let mut characters = load_characters_from_file("data/characters.yaml");
-    // println!("{:?}", characters);
+    let mut characters = load_characters_from_file("./data/characters.yaml");
 
-    // characters[0].experience_points = 0;
-    // println!("{:?}", characters[0].get_current_level());
-    // println!("{:?}", characters[0].get_proficiency_bonus());
-    // characters[0].experience_points = 555;
-    // println!("{:?}", characters[0].get_current_level());
-    // println!("{:?}", characters[0].get_proficiency_bonus());
-    // dbg!(calculate_experience_points_required_for_next_level(
-    //     characters[0].experience_points
-    // ));
+    println!("{:?}", characters);
 
+    characters[0].experience_points = 0;
+    println!("{:?}", characters[0].get_current_level());
+    println!("{:?}", characters[0].get_proficiency_bonus());
+    characters[0].experience_points = 555;
+    println!("{:?}", characters[0].get_current_level());
+    println!("{:?}", characters[0].get_proficiency_bonus());
+    dbg!(calculate_experience_points_required_for_next_level(
+        characters[0].experience_points
+    ));
     dbg!(roll_die(Die { min: 1, max: 6 }));
 
     let wizard = Class {
