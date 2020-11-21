@@ -671,29 +671,13 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
         .open(file_path)
         .unwrap();
 
-    let dr = DamageRange { min: 0, max: 2 };
-
-    serde_yaml::to_writer(&characters_output_file, &dr).unwrap();
+    serde_yaml::to_writer(&characters_output_file, &characters).unwrap();
 
     return characters;
 }
 
-fn test_yaml(file_path: &'static str) {
-    let file_path = Path::new("./test.yaml");
-
-    let characters_output_file = OpenOptions::new()
-        .write(true)
-        .create(true)
-        .open(file_path)
-        .unwrap();
-
-    let dr = DamageRange { min: 0, max: 2 };
-
-    serde_yaml::to_writer(&characters_output_file, &dr).unwrap();
-}
-
 fn main() {
-    let file_path = Path::new("./test.yaml");
+    let file_path = Path::new("./serialize/characters.yaml");
 
     let characters_output_file = OpenOptions::new()
         .write(true)
@@ -796,19 +780,39 @@ mod tests {
         }
     }
 
+    // DnD OGL
+    // Standard Exchange Rates
+    // Coin      Abbr    CP   SP   EP    GP      PP
+    // Copper    (cp)     1 1/10 1/50 1/100 1/1,000
+    // Silver    (sp)    10    1  1/5  1/10   1/100
+    // Electrum  (ep)    50    5    1   1/2    1/20
+    // Gold      (gp)   100   10    2     1    1/10
+    // Platinum  (pp) 1,000  100   20    10       1
     #[test]
-    fn verify_wealth_base_currency() {
+    fn verify_standard_exchange_rate_conversions() {
+        let copper_amount = 100.0;
+        let silver_amount = 100.0;
+        let electrum_amount = 100.0;
+        let gold_amount = 100.0;
+        let platinum_amount = 100.0;
+
         let wealth = Wealth {
-            copper: f32::Coin::new::<coin::copper>(100.0),
-            silver: f32::Coin::new::<coin::silver>(100.0),
-            electrum: f32::Coin::new::<coin::electrum>(100.0),
-            gold: f32::Coin::new::<coin::gold>(100.0),
-            platinum: f32::Coin::new::<coin::platinum>(100.0),
+            copper: f32::Coin::new::<coin::copper>(copper_amount),
+            silver: f32::Coin::new::<coin::silver>(silver_amount),
+            electrum: f32::Coin::new::<coin::electrum>(electrum_amount),
+            gold: f32::Coin::new::<coin::gold>(gold_amount),
+            platinum: f32::Coin::new::<coin::platinum>(platinum_amount),
         };
 
         assert_eq!(
-            wealth.copper + wealth.silver + wealth.gold + wealth.platinum,
-            f32::Coin::new::<coin::copper>(111100.0)
+            wealth.copper + wealth.silver + wealth.electrum + wealth.gold + wealth.platinum,
+            f32::Coin::new::<coin::copper>(
+                copper_amount * 1.0
+                    + silver_amount * 10.0
+                    + electrum_amount * 50.0
+                    + gold_amount * 100.0
+                    + platinum_amount * 1000.0
+            )
         )
     }
 }
