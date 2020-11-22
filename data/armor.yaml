@@ -1,0 +1,7 @@
+---
+- armor_type: Leather
+  category: LightArmor
+  cost: 1000.0
+  weight: 8
+  ability_requirement: ~
+  has_stealth_disadvantage: false

@@ -7,6 +7,7 @@ extern crate uom;
 
 use uom::fmt::DisplayStyle::Abbreviation;
 
+use std::cmp;
 use std::fmt::Debug;
 use std::fs::File;
 use std::fs::OpenOptions;
@@ -222,11 +223,38 @@ struct DamageRange {
     max: u32,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Armor {
+    armor_type: ArmorType,
+    category: ArmorCategory,
+    cost: f32::Coin,
+    base_armor_class: u16,
+    weight: u32,
+    ability_requirement: Option<AbilityScore>,
+    has_stealth_disadvantage: bool,
+}
+
 #[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 enum ArmorCategory {
     LightArmor,
     MediumArmor,
     HeavyArmor,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+enum ArmorType {
+    Padded,
+    Leather,
+    StuddedLeather,
+    Hide,
+    ChainShirt,
+    ScaleMail,
+    Breastplate,
+    HalfPlate,
+    RingMail,
+    ChainMail,
+    Splint,
+    Plate,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -309,7 +337,7 @@ impl Character {
     }
 }
 
-const EFFECTIVE_SPELL_LEVEL_MIN: u8 = 1;
+const EFFECTIVE_SPELL_LEVEL_MIN: u8 = 0;
 const EFFECTIVE_SPELL_LEVEL_MAX: u8 = 9;
 struct SpellSlotEntry {
     level: u32,
@@ -414,6 +442,29 @@ fn calculate_proficiency_bonus_from_experience_points(experience_points: u64) ->
     }
 
     default_proficiency_bonus
+}
+
+fn calculate_base_armor_class_for_character(armor: Armor, character: Character) -> u16 {
+    match armor.category {
+        ArmorCategory::LightArmor => {
+            let dexterity = character.ability_scores[Ability::Dexterity];
+            let armor_class_bonus = dexterity.modifier as u16;
+            return armor.base_armor_class + armor_class_bonus;
+        }
+        ArmorCategory::MediumArmor => {
+            // If you wear medium armor, you add your Dexterity modifier, to a maximum of +2,
+            // to the base number from your armor type to determine your Armor Class.
+            let dexterity = character.ability_scores[Ability::Dexterity];
+            let armor_class_bonus = cmp::max(
+                dexterity.modifier as u16,
+                cmp::min(dexterity.modifier as u16, 2),
+            );
+            return armor.base_armor_class + armor_class_bonus;
+        }
+        ArmorCategory::HeavyArmor => {
+            return armor.base_armor_class;
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -676,8 +727,27 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
     return characters;
 }
 
-fn main() {
-    let file_path = Path::new("./serialize/characters.yaml");
+fn load_armor_from_file(file_path: &'static str) -> Vec<Armor> {
+    let mut armors: Vec<Armor> = Vec::new();
+
+    let armor = Armor {
+        ability_requirement: None,
+        armor_type: ArmorType::Leather,
+        category: ArmorCategory::LightArmor,
+        base_armor_class: 11,
+        cost: f32::Coin::new::<coin::gold>(10.0),
+        weight: 8,
+        has_stealth_disadvantage: false,
+    };
+
+    armors.push(armor);
+
+    let file_path = Path::new("./serialize/armor.yaml");
+    let directory = file_path.parent().unwrap();
+
+    if !directory.exists() {
+        std::fs::create_dir(directory).unwrap();
+    }
 
     let characters_output_file = OpenOptions::new()
         .write(true)
@@ -685,11 +755,13 @@ fn main() {
         .open(file_path)
         .unwrap();
 
-    let dr = DamageRange { min: 0, max: 2 };
+    serde_yaml::to_writer(&characters_output_file, &armors).unwrap();
 
-    serde_yaml::to_writer(&characters_output_file, &dr).unwrap();
+    return armors;
+}
 
-    let races = load_races_from_file("data/races.yaml");
+fn main() {
+    let races = load_races_from_file("./data/races.yaml");
     println!("{:?}", races);
     let mut characters = load_characters_from_file("./data/characters.yaml");
 
@@ -704,6 +776,9 @@ fn main() {
     dbg!(calculate_experience_points_required_for_next_level(
         characters[0].experience_points
     ));
+
+    let armors = load_armor_from_file("./data/armor.yaml");
+
     dbg!(roll_die(Die { min: 1, max: 6 }));
 
     let wizard = Class {
