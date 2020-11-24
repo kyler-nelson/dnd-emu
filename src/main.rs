@@ -11,6 +11,7 @@ use std::cmp;
 use std::fmt::Debug;
 use std::fs::File;
 use std::fs::OpenOptions;
+use std::io;
 use std::io::Read;
 use std::ops::Index;
 use std::path::Path;
@@ -727,37 +728,32 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
     return characters;
 }
 
-fn load_armor_from_file(file_path: &'static str) -> Vec<Armor> {
-    let mut armors: Vec<Armor> = Vec::new();
-
-    let armor = Armor {
-        ability_requirement: None,
-        armor_type: ArmorType::Leather,
-        category: ArmorCategory::LightArmor,
-        base_armor_class: 11,
-        cost: f32::Coin::new::<coin::gold>(10.0),
-        weight: 8,
-        has_stealth_disadvantage: false,
-    };
-
-    armors.push(armor);
-
-    let file_path = Path::new("./serialize/armor.yaml");
+fn export_armor_to_file(armors: Vec<Armor>, file_path: &'static str) -> Result<(), io::Error> {
+    let file_path = Path::new(file_path);
     let directory = file_path.parent().unwrap();
 
     if !directory.exists() {
         std::fs::create_dir(directory).unwrap();
     }
 
-    let characters_output_file = OpenOptions::new()
+    let armors_export_file = OpenOptions::new()
         .write(true)
         .create(true)
         .open(file_path)
         .unwrap();
 
-    serde_yaml::to_writer(&characters_output_file, &armors).unwrap();
+    let result = serde_yaml::to_writer(&armors_export_file, &armors).unwrap();
 
-    return armors;
+    return Ok(result);
+}
+
+fn load_armor_from_file(file_path: &'static str) -> Result<Vec<Armor>, serde_yaml::Error> {
+    let armors_import_file = OpenOptions::new().read(true).open(file_path).unwrap();
+
+    let result = serde_yaml::from_reader(&armors_import_file)
+        .expect("Can't import the armors data by deserializing.");
+
+    Ok(result)
 }
 
 fn main() {
@@ -777,7 +773,22 @@ fn main() {
         characters[0].experience_points
     ));
 
-    let armors = load_armor_from_file("./data/armor.yaml");
+    let armors_import = load_armor_from_file("./data/armor.yaml");
+
+    let mut armors_export: Vec<Armor> = Vec::new();
+    let armor = Armor {
+        ability_requirement: None,
+        armor_type: ArmorType::Leather,
+        category: ArmorCategory::LightArmor,
+        base_armor_class: 11,
+        cost: f32::Coin::new::<coin::gold>(10.0),
+        weight: 8,
+        has_stealth_disadvantage: false,
+    };
+
+    armors_export.push(armor);
+
+    export_armor_to_file(armors_export, "./serialize/armor.yaml").unwrap();
 
     dbg!(roll_die(Die { min: 1, max: 6 }));
 
