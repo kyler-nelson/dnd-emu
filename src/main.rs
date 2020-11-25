@@ -9,15 +9,12 @@ use uom::fmt::DisplayStyle::Abbreviation;
 
 use std::cmp;
 use std::fmt::Debug;
-use std::fs::File;
 use std::fs::OpenOptions;
 use std::io;
-use std::io::Read;
 use std::ops::Index;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-use yaml_rust::YamlLoader;
 
 use rand::distributions::{Distribution, Uniform};
 
@@ -235,7 +232,7 @@ struct Armor {
     has_stealth_disadvantage: bool,
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
 enum ArmorCategory {
     LightArmor,
     MediumArmor,
@@ -278,7 +275,7 @@ const EFFECTIVE_LEVEL_MAX: u32 = 20;
 #[derive(Serialize, Deserialize, Debug)]
 struct Character {
     race: Race,
-    name: &'static str,
+    name: String,
     age: u32,
     class: Vec<Class>,
     alignment: Alignment,
@@ -468,16 +465,27 @@ fn calculate_base_armor_class_for_character(armor: Armor, character: Character) 
     }
 }
 
+fn has_proficiency_for_armor(armor: Armor, character: Character) -> bool {
+    for character_trait in character.traits {
+        for armor_proficiency_modifiers in character_trait.armor_proficiency_modifiers {
+            if armor_proficiency_modifiers.value == armor.category {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct Trait {
-    name: &'static str,
-    description: &'static str,
+    name: String,
+    description: String,
     weapon_proficiency_modifiers: Vec<WeaponProficiencyModifier>,
     armor_proficiency_modifiers: Vec<ArmorProficiencyModifier>,
 }
 
 trait Modifier<T> {
-    fn get_name(&self) -> &'static str;
+    fn get_name(&self) -> String;
     fn get_value(&self) -> T;
     fn get_modifier_type(&self) -> ModifierType;
 }
@@ -497,19 +505,19 @@ fn derive_ability_modifier_from_ability_score(score: u8) -> i8 {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct WeaponProficiencyModifier {
-    name: &'static str,
+    name: String,
     value: WeaponType,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ArmorProficiencyModifier {
-    name: &'static str,
+    name: String,
     value: ArmorCategory,
 }
 
 impl Modifier<WeaponType> for WeaponProficiencyModifier {
-    fn get_name(&self) -> &'static str {
-        self.name
+    fn get_name(&self) -> String {
+        self.name.clone()
     }
 
     fn get_value(&self) -> WeaponType {
@@ -522,8 +530,8 @@ impl Modifier<WeaponType> for WeaponProficiencyModifier {
 }
 
 impl Modifier<ArmorCategory> for ArmorProficiencyModifier {
-    fn get_name(&self) -> &'static str {
-        self.name
+    fn get_name(&self) -> String {
+        self.name.clone()
     }
 
     fn get_value(&self) -> ArmorCategory {
@@ -542,7 +550,7 @@ enum ModifierType {
     Ability,
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
 struct AbilityScore {
     ability: Ability,
     score: u8,
@@ -646,71 +654,11 @@ fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
     return races;
 }
 
-fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
-    let mut characters: Vec<Character> = Vec::new();
-
-    let character = Character {
-        name: "Tishros",
-        experience_points: 0,
-        level: 1,
-        race: Race::Dwarf,
-        class: vec![Class {
-            class_type: ClassType::Barbarian,
-            features: ClassFeatures {
-                hit_dice: Die { min: 0, max: 6 },
-                hit_points_starting: 0,
-                hit_points_from_level: Die { min: 0, max: 6 },
-            },
-        }],
-        age: 80,
-        alignment: Alignment::ChaoticNeutral,
-        size: Size::Medium,
-        speed: 25,
-        languages: vec![Language::Dwarvish],
-        ability_scores: CharacterAbilities([
-            AbilityScore {
-                ability: Ability::Strength,
-                score: 10,
-                modifier: 0,
-            },
-            AbilityScore {
-                ability: Ability::Dexterity,
-                score: 10,
-                modifier: 0,
-            },
-            AbilityScore {
-                ability: Ability::Constitution,
-                score: 10,
-                modifier: 0,
-            },
-            AbilityScore {
-                ability: Ability::Wisdom,
-                score: 10,
-                modifier: 0,
-            },
-            AbilityScore {
-                ability: Ability::Intelligence,
-                score: 10,
-                modifier: 0,
-            },
-            AbilityScore {
-                ability: Ability::Charisma,
-                score: 10,
-                modifier: 0,
-            },
-        ]),
-        traits: vec![Trait {
-            name: "test",
-            description: "Hello",
-            weapon_proficiency_modifiers: vec![],
-            armor_proficiency_modifiers: vec![],
-        }],
-        roll_hit_points: false,
-    };
-
-    characters.push(character);
-
-    let file_path = Path::new("./serialize/characters.yaml");
+fn export_characters_to_file(
+    characters: Vec<Character>,
+    file_path: &'static str,
+) -> Result<(), io::Error> {
+    let file_path = Path::new(file_path);
     let directory = file_path.parent().unwrap();
 
     if !directory.exists() {
@@ -723,9 +671,18 @@ fn load_characters_from_file(file_path: &'static str) -> Vec<Character> {
         .open(file_path)
         .unwrap();
 
-    serde_yaml::to_writer(&characters_output_file, &characters).unwrap();
+    let result = serde_yaml::to_writer(&characters_output_file, &characters).unwrap();
 
-    return characters;
+    return Ok(result);
+}
+
+fn load_characters_from_file(file_path: &'static str) -> Result<Vec<Character>, serde_yaml::Error> {
+    let characters_import_file = OpenOptions::new().read(true).open(file_path).unwrap();
+
+    let result = serde_yaml::from_reader(&characters_import_file)
+        .expect("Can't import the characters data by deserializing.");
+
+    Ok(result)
 }
 
 fn export_armor_to_file(armors: Vec<Armor>, file_path: &'static str) -> Result<(), io::Error> {
@@ -759,65 +716,9 @@ fn load_armor_from_file(file_path: &'static str) -> Result<Vec<Armor>, serde_yam
 fn main() {
     let races = load_races_from_file("./data/races.yaml");
     println!("{:?}", races);
-    let mut characters = load_characters_from_file("./data/characters.yaml");
+    let characters = load_characters_from_file("./data/characters.yaml").unwrap();
 
     println!("{:?}", characters);
-
-    characters[0].experience_points = 0;
-    println!("{:?}", characters[0].get_current_level());
-    println!("{:?}", characters[0].get_proficiency_bonus());
-    characters[0].experience_points = 555;
-    println!("{:?}", characters[0].get_current_level());
-    println!("{:?}", characters[0].get_proficiency_bonus());
-    dbg!(calculate_experience_points_required_for_next_level(
-        characters[0].experience_points
-    ));
-
-    let armors_import = load_armor_from_file("./data/armor.yaml");
-
-    let mut armors_export: Vec<Armor> = Vec::new();
-    let armor = Armor {
-        ability_requirement: None,
-        armor_type: ArmorType::Leather,
-        category: ArmorCategory::LightArmor,
-        base_armor_class: 11,
-        cost: f32::Coin::new::<coin::gold>(10.0),
-        weight: 8,
-        has_stealth_disadvantage: false,
-    };
-
-    armors_export.push(armor);
-
-    export_armor_to_file(armors_export, "./serialize/armor.yaml").unwrap();
-
-    dbg!(roll_die(Die { min: 1, max: 6 }));
-
-    let wizard = Class {
-        class_type: ClassType::Wizard,
-        features: ClassFeatures {
-            hit_dice: Die { min: 0, max: 6 },
-            hit_points_starting: 0,
-            hit_points_from_level: Die { min: 0, max: 6 },
-        },
-    };
-
-    get_number_of_spell_slots_for_spell_level(wizard, 20, 1);
-
-    let copper_amount = f32::Coin::new::<coin::copper>(100.0);
-    let platinum_amount = f32::Coin::new::<coin::platinum>(100.0);
-    let wealth = Wealth {
-        copper: f32::Coin::new::<coin::copper>(100.0),
-        silver: f32::Coin::new::<coin::silver>(100.0),
-        electrum: f32::Coin::new::<coin::electrum>(100.0),
-        gold: f32::Coin::new::<coin::gold>(100.0),
-        platinum: f32::Coin::new::<coin::platinum>(100.0),
-    };
-
-    println!(
-        "platinum = {}, gold = {}",
-        (copper_amount + platinum_amount).into_format_args(coin::platinum, Abbreviation),
-        wealth.silver.into_format_args(coin::gold, Abbreviation),
-    );
 }
 
 #[cfg(test)]
@@ -900,5 +801,184 @@ mod tests {
                     + platinum_amount * 1000.0
             )
         )
+    }
+
+    #[test]
+    fn export_sample_armors() {
+        let mut armors_export: Vec<Armor> = Vec::new();
+        let armor = Armor {
+            ability_requirement: None,
+            armor_type: ArmorType::Leather,
+            category: ArmorCategory::LightArmor,
+            base_armor_class: 11,
+            cost: f32::Coin::new::<coin::gold>(10.0),
+            weight: 8,
+            has_stealth_disadvantage: false,
+        };
+
+        armors_export.push(armor);
+
+        export_armor_to_file(armors_export, "./serialize/armor.yaml").unwrap();
+    }
+    #[test]
+    fn import_sample_armors() {
+        let armors_import = load_armor_from_file("./data/armor.yaml").unwrap();
+
+        let mut armors: Vec<Armor> = Vec::new();
+        let armor = Armor {
+            ability_requirement: None,
+            armor_type: ArmorType::Leather,
+            category: ArmorCategory::LightArmor,
+            base_armor_class: 11,
+            cost: f32::Coin::new::<coin::gold>(10.0),
+            weight: 8,
+            has_stealth_disadvantage: false,
+        };
+
+        armors.push(armor);
+
+        // TODO(Kyler): Add PartialEq derive to rest of armor properties
+        assert_eq!(
+            armors_import[0].ability_requirement,
+            armors[0].ability_requirement
+        )
+    }
+
+    #[test]
+    fn export_sample_characters() {
+        let mut characters: Vec<Character> = Vec::new();
+
+        let character = Character {
+            name: String::from("Tishros"),
+            experience_points: 0,
+            level: 1,
+            race: Race::Dwarf,
+            class: vec![Class {
+                class_type: ClassType::Barbarian,
+                features: ClassFeatures {
+                    hit_dice: Die { min: 0, max: 6 },
+                    hit_points_starting: 0,
+                    hit_points_from_level: Die { min: 0, max: 6 },
+                },
+            }],
+            age: 80,
+            alignment: Alignment::ChaoticNeutral,
+            size: Size::Medium,
+            speed: 25,
+            languages: vec![Language::Dwarvish],
+            ability_scores: CharacterAbilities([
+                AbilityScore {
+                    ability: Ability::Strength,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Dexterity,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Constitution,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Wisdom,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Intelligence,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Charisma,
+                    score: 10,
+                    modifier: 0,
+                },
+            ]),
+            traits: vec![Trait {
+                name: String::from("test"),
+                description: String::from("Hello"),
+                weapon_proficiency_modifiers: vec![],
+                armor_proficiency_modifiers: vec![],
+            }],
+            roll_hit_points: false,
+        };
+
+        characters.push(character);
+
+        export_characters_to_file(characters, "./serialize/characters.yaml").unwrap();
+    }
+    #[test]
+    fn import_sample_characters() {
+        let characters_import = load_characters_from_file("./data/characters.yaml").unwrap();
+
+        let mut characters: Vec<Character> = Vec::new();
+
+        let character = Character {
+            name: String::from("Tishros"),
+            experience_points: 0,
+            level: 1,
+            race: Race::Dwarf,
+            class: vec![Class {
+                class_type: ClassType::Barbarian,
+                features: ClassFeatures {
+                    hit_dice: Die { min: 0, max: 6 },
+                    hit_points_starting: 0,
+                    hit_points_from_level: Die { min: 0, max: 6 },
+                },
+            }],
+            age: 80,
+            alignment: Alignment::ChaoticNeutral,
+            size: Size::Medium,
+            speed: 25,
+            languages: vec![Language::Dwarvish],
+            ability_scores: CharacterAbilities([
+                AbilityScore {
+                    ability: Ability::Strength,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Dexterity,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Constitution,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Wisdom,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Intelligence,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Charisma,
+                    score: 10,
+                    modifier: 0,
+                },
+            ]),
+            traits: vec![Trait {
+                name: String::from("test"),
+                description: String::from("Hello"),
+                weapon_proficiency_modifiers: vec![],
+                armor_proficiency_modifiers: vec![],
+            }],
+            roll_hit_points: false,
+        };
+
+        characters.push(character);
+
+        // TODO(Kyler): Add PartialEq derive to rest of character properties
+        assert_eq!(characters_import[0].name, characters[0].name)
     }
 }
