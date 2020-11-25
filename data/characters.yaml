@@ -1,5 +1,14 @@
 ---
-- race: Dwarf
+- race:
+    race_type: Dwarf
+    racial_traits:
+      age: 80
+      alignment: ChaoticNeutral
+      size: Medium
+      speed: 25
+      languages:
+        - Dwarvish
+      traits: []
   name: Tishros
   age: 80
   class:

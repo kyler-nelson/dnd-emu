@@ -56,7 +56,7 @@ mod f32 {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-enum Race {
+enum RaceType {
     Dwarf,
     HillDwarf,
     Elf,
@@ -70,7 +70,14 @@ enum Race {
     Tiefling,
 }
 
-struct RaceAttributes {
+#[derive(Serialize, Deserialize, Debug)]
+struct Race {
+    race_type: RaceType,
+    racial_traits: RacialTraits,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct RacialTraits {
     age: u64,
     alignment: Alignment,
     size: Size,
@@ -465,7 +472,7 @@ fn calculate_base_armor_class_for_character(armor: Armor, character: Character) 
     }
 }
 
-fn has_proficiency_for_armor(armor: Armor, character: Character) -> bool {
+fn has_proficiency_with_armor(character: Character, armor: Armor) -> bool {
     for character_trait in character.traits {
         for armor_proficiency_modifiers in character_trait.armor_proficiency_modifiers {
             if armor_proficiency_modifiers.value == armor.category {
@@ -473,6 +480,15 @@ fn has_proficiency_for_armor(armor: Armor, character: Character) -> bool {
             }
         }
     }
+
+    for racial_trait in character.race.racial_traits.traits {
+        for armor_proficiency_modifiers in racial_trait.armor_proficiency_modifiers {
+            if armor_proficiency_modifiers.value == armor.category {
+                return true;
+            }
+        }
+    }
+
     return false;
 }
 
@@ -557,16 +573,6 @@ struct AbilityScore {
     modifier: i8,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct RaceInfo {
-    race: Race,
-    age: u32,
-    alignment: Alignment,
-    size: Size,
-    speed: i64,
-    languages: Vec<Language>,
-}
-
 struct CharacterAdvancementEntry {
     level: u32,
     required_experience_points: u64,
@@ -624,16 +630,19 @@ fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
 }
 
-fn load_races_from_file(file_path: &'static str) -> Vec<RaceInfo> {
-    let mut races: Vec<RaceInfo> = Vec::new();
+fn load_races_from_file(file_path: &'static str) -> Vec<Race> {
+    let mut races: Vec<Race> = Vec::new();
 
-    races.push(RaceInfo {
-        race: Race::Dwarf,
-        age: 80,
-        alignment: Alignment::ChaoticNeutral,
-        size: Size::Medium,
-        speed: 25,
-        languages: vec![Language::Dwarvish],
+    races.push(Race {
+        race_type: RaceType::Dwarf,
+        racial_traits: RacialTraits {
+            age: 80,
+            alignment: Alignment::ChaoticNeutral,
+            size: Size::Medium,
+            speed: 25,
+            languages: vec![Language::Dwarvish],
+            traits: vec![],
+        },
     });
 
     let file_path = Path::new("serialize/races.yaml");
@@ -767,6 +776,93 @@ mod tests {
         }
     }
 
+    #[test]
+    fn check_if_character_can_wear_armor() {
+        let armor = Armor {
+            ability_requirement: None,
+            armor_type: ArmorType::Leather,
+            category: ArmorCategory::LightArmor,
+            base_armor_class: 11,
+            cost: f32::Coin::new::<coin::gold>(10.0),
+            weight: 8,
+            has_stealth_disadvantage: false,
+        };
+
+        let character = Character {
+            name: String::from("Tishros"),
+            experience_points: 0,
+            level: 1,
+            race: Race {
+                race_type: RaceType::Dwarf,
+                racial_traits: RacialTraits {
+                    age: 80,
+                    alignment: Alignment::ChaoticNeutral,
+                    size: Size::Medium,
+                    speed: 25,
+                    languages: vec![Language::Dwarvish],
+                    traits: vec![],
+                },
+            },
+            class: vec![Class {
+                class_type: ClassType::Barbarian,
+                features: ClassFeatures {
+                    hit_dice: Die { min: 0, max: 6 },
+                    hit_points_starting: 0,
+                    hit_points_from_level: Die { min: 0, max: 6 },
+                },
+            }],
+            age: 80,
+            alignment: Alignment::ChaoticNeutral,
+            size: Size::Medium,
+            speed: 25,
+            languages: vec![Language::Dwarvish],
+            ability_scores: CharacterAbilities([
+                AbilityScore {
+                    ability: Ability::Strength,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Dexterity,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Constitution,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Wisdom,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Intelligence,
+                    score: 10,
+                    modifier: 0,
+                },
+                AbilityScore {
+                    ability: Ability::Charisma,
+                    score: 10,
+                    modifier: 0,
+                },
+            ]),
+            traits: vec![Trait {
+                description: String::from(""),
+                name: String::from(""),
+                armor_proficiency_modifiers: vec![ArmorProficiencyModifier {
+                    name: String::from("LightArmor"),
+                    value: ArmorCategory::LightArmor,
+                }],
+                weapon_proficiency_modifiers: vec![],
+            }],
+            roll_hit_points: false,
+        };
+
+        assert!(has_proficiency_with_armor(character, armor))
+    }
+
     // DnD OGL
     // Standard Exchange Rates
     // Coin      Abbr    CP   SP   EP    GP      PP
@@ -852,7 +948,17 @@ mod tests {
             name: String::from("Tishros"),
             experience_points: 0,
             level: 1,
-            race: Race::Dwarf,
+            race: Race {
+                race_type: RaceType::Dwarf,
+                racial_traits: RacialTraits {
+                    age: 80,
+                    alignment: Alignment::ChaoticNeutral,
+                    size: Size::Medium,
+                    speed: 25,
+                    languages: vec![Language::Dwarvish],
+                    traits: vec![],
+                },
+            },
             class: vec![Class {
                 class_type: ClassType::Barbarian,
                 features: ClassFeatures {
@@ -921,7 +1027,17 @@ mod tests {
             name: String::from("Tishros"),
             experience_points: 0,
             level: 1,
-            race: Race::Dwarf,
+            race: Race {
+                race_type: RaceType::Dwarf,
+                racial_traits: RacialTraits {
+                    age: 80,
+                    alignment: Alignment::ChaoticNeutral,
+                    size: Size::Medium,
+                    speed: 25,
+                    languages: vec![Language::Dwarvish],
+                    traits: vec![],
+                },
+            },
             class: vec![Class {
                 class_type: ClassType::Barbarian,
                 features: ClassFeatures {
