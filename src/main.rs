@@ -185,6 +185,16 @@ enum Ability {
     Charisma,
 }
 
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
+enum SavingThrow {
+    Strength,
+    Dexterity,
+    Constitution,
+    Intelligence,
+    Wisdom,
+    Charisma,
+}
+
 trait Item {}
 
 struct Weapon {
@@ -263,9 +273,9 @@ enum ArmorType {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct CharacterAbilities([AbilityScore; 6]);
+struct AbilitySet([AbilityScore; 6]);
 
-impl Index<Ability> for CharacterAbilities {
+impl Index<Ability> for AbilitySet {
     type Output = AbilityScore;
 
     fn index(&self, index: Ability) -> &Self::Output {
@@ -275,6 +285,45 @@ impl Index<Ability> for CharacterAbilities {
             .find(|&ability_score| ability_score.ability == index)
             .expect("Ability score not found")
     }
+}
+
+trait Entity {
+    fn race(&self) -> Race;
+    fn name(&self) -> String;
+    fn age(&self) -> u32;
+    fn class(&self) -> Option<Vec<Class>>;
+    fn alignment(&self) -> Alignment;
+    fn size(&self) -> Size;
+    fn speed(&self) -> i64;
+    fn languages(&self) -> Vec<Language>;
+    fn ability_set(&self) -> AbilitySet;
+    fn traits(&self) -> Option<Vec<Trait>>;
+}
+
+trait EntityRoll {
+    fn roll_ability_check(&self, ability: Ability) -> u16;
+    fn roll_saving_throw(&self, ability: SavingThrow) -> u16;
+    fn roll_weapon_attack(&self, weapon_attack: Weapon) -> u16;
+}
+
+impl EntityRoll for Character {
+    fn roll_ability_check(&self, ability: Ability) -> u16 {
+        roll_die(Die { min: 1, max: 20 }) + self.ability_scores[ability].modifier as u16
+    }
+
+    fn roll_saving_throw(&self, saving_throw: SavingThrow) -> u16 {
+        roll_die(Die { min: 1, max: 20 }) + self.saving_throws[saving_throw].score as u16
+    }
+
+    fn roll_weapon_attack(&self, weapon_attack: Weapon) -> u16 {
+        0
+    }
+}
+
+enum EntityType {
+    Creature,
+    Character,
+    Object,
 }
 
 const EFFECTIVE_LEVEL_MIN: u32 = 1;
@@ -291,7 +340,7 @@ struct Character {
     languages: Vec<Language>,
     experience_points: u64,
     level: u32,
-    ability_scores: CharacterAbilities,
+    ability_scores: AbilitySet,
     traits: Vec<Trait>,
     roll_hit_points: bool,
 }
@@ -777,7 +826,7 @@ mod tests {
     }
 
     #[test]
-    fn check_if_character_can_wear_armor() {
+    fn validate_character_can_wear_armor() {
         let armor = Armor {
             ability_requirement: None,
             armor_type: ArmorType::Leather,
@@ -816,7 +865,7 @@ mod tests {
             size: Size::Medium,
             speed: 25,
             languages: vec![Language::Dwarvish],
-            ability_scores: CharacterAbilities([
+            ability_scores: AbilitySet([
                 AbilityScore {
                     ability: Ability::Strength,
                     score: 10,
@@ -860,7 +909,7 @@ mod tests {
             roll_hit_points: false,
         };
 
-        assert!(has_proficiency_with_armor(character, armor))
+        assert_eq!(has_proficiency_with_armor(character, armor), true)
     }
 
     // DnD OGL
@@ -972,7 +1021,7 @@ mod tests {
             size: Size::Medium,
             speed: 25,
             languages: vec![Language::Dwarvish],
-            ability_scores: CharacterAbilities([
+            ability_scores: AbilitySet([
                 AbilityScore {
                     ability: Ability::Strength,
                     score: 10,
@@ -1051,7 +1100,7 @@ mod tests {
             size: Size::Medium,
             speed: 25,
             languages: vec![Language::Dwarvish],
-            ability_scores: CharacterAbilities([
+            ability_scores: AbilitySet([
                 AbilityScore {
                     ability: Ability::Strength,
                     score: 10,
