@@ -47,6 +47,25 @@
     - ability: Charisma
       score: 10
       modifier: 0
+  saving_throws:
+    - saving_throw: Strength
+      score: 10
+      modifier: 0
+    - saving_throw: Dexterity
+      score: 10
+      modifier: 0
+    - saving_throw: Constitution
+      score: 10
+      modifier: 0
+    - saving_throw: Wisdom
+      score: 10
+      modifier: 0
+    - saving_throw: Intelligence
+      score: 10
+      modifier: 0
+    - saving_throw: Charisma
+      score: 10
+      modifier: 0
   traits:
     - name: test
       description: Hello

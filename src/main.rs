@@ -173,28 +173,6 @@ struct Class {
     features: ClassFeatures,
 }
 
-const EFFECTIVE_ABILITY_SCORE_MIN: u8 = 0;
-const EFFECTIVE_ABILITY_SCORE_MAX: u8 = 30;
-#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
-enum Ability {
-    Strength,
-    Dexterity,
-    Constitution,
-    Intelligence,
-    Wisdom,
-    Charisma,
-}
-
-#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
-enum SavingThrow {
-    Strength,
-    Dexterity,
-    Constitution,
-    Intelligence,
-    Wisdom,
-    Charisma,
-}
-
 trait Item {}
 
 struct Weapon {
@@ -272,6 +250,25 @@ enum ArmorType {
     Plate,
 }
 
+const EFFECTIVE_ABILITY_SCORE_MIN: u8 = 0;
+const EFFECTIVE_ABILITY_SCORE_MAX: u8 = 30;
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
+enum Ability {
+    Strength,
+    Dexterity,
+    Constitution,
+    Intelligence,
+    Wisdom,
+    Charisma,
+}
+
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
+struct AbilityScore {
+    ability: Ability,
+    score: u8,
+    modifier: i8,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct AbilitySet([AbilityScore; 6]);
 
@@ -284,6 +281,75 @@ impl Index<Ability> for AbilitySet {
             .iter()
             .find(|&ability_score| ability_score.ability == index)
             .expect("Ability score not found")
+    }
+}
+
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
+struct SavingThrowScore {
+    saving_throw: Ability,
+    score: u8,
+    modifier: i8,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SavingThrowSet([SavingThrowScore; 6]);
+
+impl Index<Ability> for SavingThrowSet {
+    type Output = SavingThrowScore;
+
+    fn index(&self, index: Ability) -> &Self::Output {
+        &self
+            .0
+            .iter()
+            .find(|&saving_throw_score| saving_throw_score.saving_throw == index)
+            .expect("Saving throw score not found")
+    }
+}
+
+#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
+enum Skill {
+    Athletics,
+    Acrobatics,
+    SleightOfHand,
+    Stealth,
+    Arcana,
+    History,
+    Investigation,
+    Nature,
+    Religion,
+    AnimalHandling,
+    Insight,
+    Medicine,
+    Perception,
+    Survival,
+    Deception,
+    Intimidation,
+    Performance,
+    Persuasion,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SkillScore {
+    skill: Skill,
+    ability: Ability,
+    score: u8,
+    proficient: bool,
+    advantage: bool,
+    disadvantage: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SkillSet([SkillScore; 18]);
+
+impl Index<Skill> for SkillSet {
+    type Output = SkillScore;
+
+    fn index(&self, index: Skill) -> &Self::Output {
+        &self
+            .0
+            .iter()
+            .find(|&skill_score| skill_score.skill == index)
+            .expect("Skill score not found")
     }
 }
 
@@ -302,8 +368,9 @@ trait Entity {
 
 trait EntityRoll {
     fn roll_ability_check(&self, ability: Ability) -> u16;
-    fn roll_saving_throw(&self, ability: SavingThrow) -> u16;
+    fn roll_saving_throw(&self, saving_throw: Ability) -> u16;
     fn roll_weapon_attack(&self, weapon_attack: Weapon) -> u16;
+    fn roll_passive_check(&self, ability: Ability) -> u16;
 }
 
 impl EntityRoll for Character {
@@ -311,12 +378,16 @@ impl EntityRoll for Character {
         roll_die(Die { min: 1, max: 20 }) + self.ability_scores[ability].modifier as u16
     }
 
-    fn roll_saving_throw(&self, saving_throw: SavingThrow) -> u16 {
-        roll_die(Die { min: 1, max: 20 }) + self.saving_throws[saving_throw].score as u16
+    fn roll_saving_throw(&self, saving_throw: Ability) -> u16 {
+        roll_die(Die { min: 1, max: 20 }) + self.saving_throws[saving_throw].modifier as u16
     }
 
     fn roll_weapon_attack(&self, weapon_attack: Weapon) -> u16 {
         0
+    }
+
+    fn roll_passive_check(&self, ability: Ability) -> u16 {
+        10 + self.ability_scores[ability].modifier as u16
     }
 }
 
@@ -341,6 +412,7 @@ struct Character {
     experience_points: u64,
     level: u32,
     ability_scores: AbilitySet,
+    saving_throws: SavingThrowSet,
     traits: Vec<Trait>,
     roll_hit_points: bool,
 }
@@ -615,13 +687,6 @@ enum ModifierType {
     Ability,
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize, Debug, PartialEq)]
-struct AbilityScore {
-    ability: Ability,
-    score: u8,
-    modifier: i8,
-}
-
 struct CharacterAdvancementEntry {
     level: u32,
     required_experience_points: u64,
@@ -771,13 +836,7 @@ fn load_armor_from_file(file_path: &'static str) -> Result<Vec<Armor>, serde_yam
     Ok(result)
 }
 
-fn main() {
-    let races = load_races_from_file("./data/races.yaml");
-    println!("{:?}", races);
-    let characters = load_characters_from_file("./data/characters.yaml").unwrap();
-
-    println!("{:?}", characters);
-}
+fn main() {}
 
 #[cfg(test)]
 mod tests {
@@ -893,6 +952,38 @@ mod tests {
                 },
                 AbilityScore {
                     ability: Ability::Charisma,
+                    score: 10,
+                    modifier: 0,
+                },
+            ]),
+            saving_throws: SavingThrowSet([
+                SavingThrowScore {
+                    saving_throw: Ability::Strength,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Dexterity,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Constitution,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Wisdom,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Intelligence,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Charisma,
                     score: 10,
                     modifier: 0,
                 },
@@ -1059,6 +1150,38 @@ mod tests {
                 weapon_proficiency_modifiers: vec![],
                 armor_proficiency_modifiers: vec![],
             }],
+            saving_throws: SavingThrowSet([
+                SavingThrowScore {
+                    saving_throw: Ability::Strength,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Dexterity,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Constitution,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Wisdom,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Intelligence,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Charisma,
+                    score: 10,
+                    modifier: 0,
+                },
+            ]),
             roll_hit_points: false,
         };
 
@@ -1138,6 +1261,38 @@ mod tests {
                 weapon_proficiency_modifiers: vec![],
                 armor_proficiency_modifiers: vec![],
             }],
+            saving_throws: SavingThrowSet([
+                SavingThrowScore {
+                    saving_throw: Ability::Strength,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Dexterity,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Constitution,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Wisdom,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Intelligence,
+                    score: 10,
+                    modifier: 0,
+                },
+                SavingThrowScore {
+                    saving_throw: Ability::Charisma,
+                    score: 10,
+                    modifier: 0,
+                },
+            ]),
             roll_hit_points: false,
         };
 
