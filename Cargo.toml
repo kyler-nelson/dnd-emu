@@ -13,3 +13,4 @@ yaml-rust = "0.4.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
 uom = { version = "0.30.0", features = ["use_serde"] }
+structopt = "0.3.13"

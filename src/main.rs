@@ -14,6 +14,8 @@ use std::io;
 use std::ops::Index;
 use std::path::Path;
 
+use structopt::StructOpt;
+
 use serde::{Deserialize, Serialize};
 
 use rand::distributions::{Distribution, Uniform};
@@ -23,10 +25,8 @@ use rand::distributions::{Distribution, Uniform};
 #[macro_use]
 mod coin {
     quantity! {
-        /// Coin (base unit copper, cp).
         quantity: Coin; "coin";
-        /// Coin dimension, cp.
-        dimension: Q<Z0>; // amount
+        dimension: Q<Z0>;
         units {
             @copper: 1.0; "cp", "copper", "copper";
             @silver: 10.0; "sp", "silver", "silver";
@@ -160,6 +160,22 @@ fn roll_die(die: Die) -> u16 {
     die_range.sample(&mut rng)
 }
 
+enum DamageType {
+    Acid,
+    Bludgeoning,
+    Cold,
+    Fire,
+    Force,
+    Lightning,
+    Necrotic,
+    Piercing,
+    Poison,
+    Psychic,
+    Radiant,
+    Slashing,
+    Thunder,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 struct ClassFeatures {
     hit_dice: Die,
@@ -232,6 +248,24 @@ enum ArmorCategory {
     LightArmor,
     MediumArmor,
     HeavyArmor,
+}
+
+enum Action {
+    Stabilize,
+}
+
+enum Condition {
+    Stable,
+    Unconscious,
+    Incapacitated,
+}
+
+enum AreaOfAffect {
+    Cone,
+    Line,
+    Sphere,
+    Cylinder,
+    Cube,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -836,7 +870,17 @@ fn load_armor_from_file(file_path: &'static str) -> Result<Vec<Armor>, serde_yam
     Ok(result)
 }
 
-fn main() {}
+#[derive(StructOpt)]
+struct Cli {
+    pattern: String,
+    #[structopt(parse(from_os_str))]
+    path: std::path::PathBuf,
+}
+
+fn main() {
+    let args = Cli::from_args();
+    let content = std::fs::read_to_string(&args.path).expect("could not read file");
+}
 
 #[cfg(test)]
 mod tests {
