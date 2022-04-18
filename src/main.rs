@@ -90,6 +90,7 @@ struct RacialTraits {
 struct Subrace {
     parent: Race,
 }
+
 #[derive(Serialize, Deserialize, Debug)]
 enum Alignment {
     LawfulGood,
@@ -132,7 +133,8 @@ enum Language {
 }
 #[derive(Serialize, Deserialize, Debug)]
 enum Background {}
-#[derive(Serialize, Deserialize, Debug)]
+
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 enum ClassType {
     Barbarian,
     Bard,
@@ -148,7 +150,7 @@ enum ClassType {
     Wizard,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 struct Die {
     min: u16,
     max: u16,
@@ -176,14 +178,16 @@ enum DamageType {
     Thunder,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 struct ClassFeatures {
     hit_dice: Die,
     hit_points_starting: u16,
     hit_points_from_level: Die,
+    weapon_proficiency_modifiers: Vec<WeaponProficiencyModifier>,
+    armor_proficiency_modifiers: Vec<ArmorProficiencyModifier>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 struct Class {
     class_type: ClassType,
     features: ClassFeatures,
@@ -559,7 +563,7 @@ fn find_spell_splots_for_spell_level(
     assert!(spell_level >= EFFECTIVE_SPELL_LEVEL_MIN && spell_level <= EFFECTIVE_SPELL_LEVEL_MAX);
 
     let indexed_spell_level = spell_level - 1;
-    for entry in spell_slots_per_spell_level_table.iter() {
+    for entry in WIZARD_SPELL_SLOTS_PER_SPELL_LEVEL.iter() {
         if level == entry.level {
             return entry.spell_level_count[indexed_spell_level as usize];
         }
@@ -674,13 +678,13 @@ fn derive_ability_modifier_from_ability_score(score: u8) -> i8 {
     return floored_ability_score;
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 struct WeaponProficiencyModifier {
     name: String,
     value: WeaponType,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 struct ArmorProficiencyModifier {
     name: String,
     value: ArmorCategory,
@@ -1351,5 +1355,21 @@ mod tests {
 
         // TODO(Kyler): Add PartialEq derive to rest of character properties
         assert_eq!(characters_import[0].name, characters[0].name)
+    }
+
+    #[test]
+    fn verify_spell_slot_count() {
+        let class = Class {
+            class_type: ClassType::Wizard,
+            features: ClassFeatures {
+                hit_dice: Die { min: 0, max: 6 },
+                hit_points_starting: 0,
+                hit_points_from_level: Die { min: 0, max: 6 },
+            },
+        };
+
+        assert_eq!(3, get_number_of_spell_slots_for_spell_level(class, 1, 1));
+        assert_eq!(1, get_number_of_spell_slots_for_spell_level(class, 20, 9));
+        assert_eq!(5, get_number_of_spell_slots_for_spell_level(class, 1, 9));
     }
 }
